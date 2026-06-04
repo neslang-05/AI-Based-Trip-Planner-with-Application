@@ -1,0 +1,175 @@
+\section{Frontend Architecture}
+
+The frontend architecture focuses on responsive design, smooth navigation, and visually attractive layouts. Although the application uses traditional server-side rendering through Django templates, the interface is designed to simulate modern single-page application behavior through JavaScript-driven interactions.
+
+Frontend technologies include:
+
+\begin{itemize}
+    \item \textbf{HTML5}: Semantic markup and form structure
+    \item \textbf{CSS3}: Custom styling, responsive grid layouts, and animations
+    \item \textbf{JavaScript}: Asynchronous form submission via Fetch API and dynamic DOM manipulation
+    \item \textbf{Django Template Language}: Server-side data binding and template inheritance
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=6cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (req) {HTTP Request (User Action)};
+        \node[box, fill=green!15, below=of req] (django) {Django View (Server-Side Processing)};
+        \node[box, fill=orange!15, below=of django] (template) {Django Template Engine};
+        \node[box, fill=purple!15, below=of template] (html) {Rendered HTML Response};
+        \node[box, fill=red!15, below=of html] (js) {JavaScript Enhancement (Dynamic Behavior)};
+        \node[box, fill=gray!15, below=of js] (dom) {Final UI Rendered in Browser};
+
+        \draw[arrow] (req) -- (django);
+        \draw[arrow] (django) -- (template);
+        \draw[arrow] (template) -- (html);
+        \draw[arrow] (html) -- (js);
+        \draw[arrow] (js) -- (dom);
+    \end{tikzpicture}
+    \caption{Frontend Rendering Workflow}
+    \label{fig:frontend-workflow}
+\end{figure}
+
+\subsection{Responsive Design Features}
+
+The application supports a wide range of devices:
+
+\begin{itemize}
+    \item \textbf{Desktop}: Full-width layouts with multi-column grids
+    \item \textbf{Tablets}: Adaptive column collapsing with fluid widths
+    \item \textbf{Smartphones}: Single-column stacked layouts with touch-friendly navigation
+\end{itemize}
+
+Responsive layouts are achieved through:
+
+\begin{itemize}
+    \item Flexible grid systems using CSS Flexbox and Grid
+    \item Adaptive image scaling with \texttt{max-width: 100\%}
+    \item Media queries for breakpoint-specific styling
+    \item Mobile-friendly navigation with hamburger menu support
+\end{itemize}
+
+\subsection{Dynamic Destination Images}
+
+To improve visual appeal, the application integrates fallback destination images using the \textbf{Unsplash Source API}. If local images are unavailable, the system dynamically loads travel-related images based on destination names. This feature enhances visual engagement, user immersion, and destination attractiveness.
+
+\section{Key Application Interfaces}
+
+\subsection{Landing and Authentication Pages}
+
+The landing page acts as the entry point of the application and focuses on user engagement, travel inspiration, easy navigation, and quick registration access. The page features a hero section with a full-width background, a destination carousel showcasing popular Indian travel locations, and an inline trip planning form.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.2cm,
+        box/.style={draw, rounded corners, minimum width=3.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!20] (home) {Home Page};
+        \node[box, fill=green!20, below left=1.2cm and 1.5cm of home] (login) {Login Page};
+        \node[box, fill=green!20, below right=1.2cm and 1.5cm of home] (register) {Register Page};
+        \node[box, fill=orange!20, below=2.5cm of home] (dest) {Destinations Explorer};
+        \node[box, fill=purple!20, below=of dest] (plan) {Trip Planning Form};
+        \node[box, fill=red!20, below=of plan] (results) {Results View};
+        \node[box, fill=gray!20, below=of results] (dashboard) {My Trips Dashboard};
+
+        \draw[arrow] (home) -- (login);
+        \draw[arrow] (home) -- (register);
+        \draw[arrow] (login.south) -- ++(0,-0.4) -- ++(3.8,0) |- (dest.west);
+        \draw[arrow] (dest) -- (plan);
+        \draw[arrow] (plan) -- (results);
+        \draw[arrow] (results) -- (dashboard);
+    \end{tikzpicture}
+    \caption{User Navigation Structure}
+    \label{fig:nav-structure}
+\end{figure}
+
+Authentication pages include:
+\begin{itemize}
+    \item \textbf{Login form}: Username and password fields with CSRF protection
+    \item \textbf{Registration form}: Username, email, and password with confirmation
+    \item \textbf{Password validation}: Minimum length and confirmation matching
+    \item \textbf{Session management}: Persistent login sessions with secure cookies
+\end{itemize}
+
+\subsection{Destinations Explorer}
+
+The destination explorer displays all 36 travel destinations using responsive card-based grid layouts. Each destination card contains:
+
+\begin{itemize}
+    \item Destination image (local or dynamically loaded from Unsplash)
+    \item Climate information badge
+    \item Estimated budget range
+    \item Travel category tag
+    \item Short destination description
+    \item Quick link to the trip planning form pre-filled with the destination
+\end{itemize}
+
+The explorer supports real-time client-side filtering by destination name search and climate type selection, enabling users to find relevant destinations efficiently.
+
+\subsection{Trip Planning Form}
+
+The trip planning form acts as the primary interaction point for recommendation generation. The form securely collects:
+
+\begin{itemize}
+    \item \textbf{Budget}: Numeric input in INR with minimum value validation
+    \item \textbf{Travel Days}: Integer selector (1--30 days)
+    \item \textbf{Climate Preference}: Dropdown selection (Hot, Cold, Moderate)
+    \item \textbf{Travel Type}: Dropdown selection (Adventure, Relaxation, Cultural, Family)
+\end{itemize}
+
+Interactive dropdowns and client-side validation improve user input accuracy and usability. Form submission is handled asynchronously via the JavaScript Fetch API, providing a seamless user experience without full page reloads.
+
+\subsection{Dashboard (My Trips)}
+
+The dashboard provides personalized trip management features including:
+
+\begin{itemize}
+    \item \textbf{Saved Itineraries}: Tabular display of all saved trip plans with destination images
+    \item \textbf{Travel History}: Date-stamped records with budget and travel type information
+    \item \textbf{Soft-Delete Functionality}: Trips moved to a ``Recently Deleted'' section rather than permanently erased
+    \item \textbf{Trip Restoration}: Deleted trips can be recycled back to the active list
+\end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=5.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (active) {Active Trips List};
+        \node[box, fill=red!15, right=2cm of active] (trash) {Deleted Trips (Trash)};
+        \node[box, fill=gray!15, below=2cm of active] (db) {Database (\texttt{is\_deleted=False})};
+        \node[box, fill=gray!15, below=2cm of trash] (dbd) {Database (\texttt{is\_deleted=True})};
+
+        \draw[arrow] (active.east) -- node[above, font=\scriptsize]{Delete} (trash.west);
+        \draw[arrow] (trash.west) -- node[below, font=\scriptsize]{Restore} (active.east);
+        \draw[arrow] (active) -- (db);
+        \draw[arrow] (trash) -- (dbd);
+    \end{tikzpicture}
+    \caption{Soft Delete Workflow}
+    \label{fig:soft-delete}
+\end{figure}
+
+The soft-delete mechanism prevents accidental data loss by setting the \texttt{is\_deleted} flag to \texttt{True} and recording the deletion timestamp in \texttt{deleted\_at}. The active trips query filters for records where \texttt{is\_deleted=False}.
+
+\subsection{Results View}
+
+The results interface displays the complete trip plan generated by the AI recommendation engine:
+
+\begin{itemize}
+    \item \textbf{Predicted Destination}: Name and destination image
+    \item \textbf{Budget Summaries}: Total budget with percentage distribution across categories
+    \item \textbf{Daily Itinerary Schedules}: Day-by-day activity plan
+    \item \textbf{Activity Suggestions}: Recommended attractions and experiences
+    \item \textbf{Travel Guidance}: Practical tips for the recommended destination
+\end{itemize}
+
+The application visualizes budget distribution using percentages and organized layout structures to improve readability and user understanding. The interface is designed to create an immersive and professional travel planning experience while maintaining performance and responsiveness across all supported devices.

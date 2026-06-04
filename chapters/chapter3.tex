@@ -1,0 +1,192 @@
+\section{System Architecture}
+
+The AI-Based Trip Planner Web Application is designed using a modular, layered architecture that separates user interaction, business logic, machine learning inference, and data persistence into distinct components. This separation ensures maintainability, scalability, and testability of each system layer.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.2cm,
+        box/.style={draw, rounded corners, minimum width=5cm, minimum height=0.9cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (user) {User (Web Browser)};
+        \node[box, fill=green!15, below=of user] (frontend) {Frontend Layer (HTML5, CSS3, JavaScript)};
+        \node[box, fill=orange!15, below=of frontend] (django) {Django Web Application (Views, URLs, Templates)};
+        \node[box, fill=purple!15, below=of django] (api) {Django REST Framework (API Layer)};
+        \node[box, fill=red!15, below=of api] (ml) {Machine Learning Engine (Decision Tree, Joblib)};
+        \node[box, fill=gray!15, below=of ml] (db) {Database (SQLite3 / ORM)};
+
+        \draw[arrow] (user) -- (frontend);
+        \draw[arrow] (frontend) -- (django);
+        \draw[arrow] (django) -- (api);
+        \draw[arrow] (api) -- (ml);
+        \draw[arrow] (ml) -- (db);
+        \draw[arrow, dashed] (db.east) -- ++(1.5,0) |- (user.east);
+    \end{tikzpicture}
+    \caption{High-Level System Architecture}
+    \label{fig:system-architecture}
+\end{figure}
+
+The architecture consists of the following layers:
+
+\begin{itemize}
+    \item \textbf{Presentation Layer}: HTML5, CSS3, and JavaScript templates rendered through Django's template engine, providing responsive and interactive user interfaces.
+    \item \textbf{Application Layer}: Django views and URL routing handle HTTP request processing, authentication, session management, and template rendering.
+    \item \textbf{API Layer}: Django REST Framework exposes RESTful endpoints for frontend-backend communication, enabling JSON-based request and response handling.
+    \item \textbf{Machine Learning Layer}: Pre-trained Decision Tree model loaded via Joblib for real-time destination prediction and itinerary generation.
+    \item \textbf{Data Layer}: SQLite3 database accessed through Django's ORM for storing user accounts, trip records, and related data.
+\end{itemize}
+
+\section{User Interaction Flow}
+
+The system follows a structured user interaction sequence from input submission to itinerary delivery:
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=0.9cm,
+        step/.style={draw, rounded corners, minimum width=7cm, minimum height=0.8cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[step, fill=blue!10] (s1) {1. User visits the application and registers/logs in};
+        \node[step, fill=blue!10, below=of s1] (s2) {2. User fills the Trip Planning Form (budget, days, climate, travel type)};
+        \node[step, fill=green!10, below=of s2] (s3) {3. Form data submitted via POST request to Django API};
+        \node[step, fill=green!10, below=of s3] (s4) {4. API serializer validates input data};
+        \node[step, fill=orange!10, below=of s4] (s5) {5. ML engine predicts destination using Decision Tree};
+        \node[step, fill=orange!10, below=of s5] (s6) {6. Itinerary generator creates day-wise schedule and cost breakdown};
+        \node[step, fill=purple!10, below=of s6] (s7) {7. Results saved to database and returned as JSON response};
+        \node[step, fill=purple!10, below=of s7] (s8) {8. Frontend renders Results View with full trip plan};
+
+        \draw[arrow] (s1) -- (s2);
+        \draw[arrow] (s2) -- (s3);
+        \draw[arrow] (s3) -- (s4);
+        \draw[arrow] (s4) -- (s5);
+        \draw[arrow] (s5) -- (s6);
+        \draw[arrow] (s6) -- (s7);
+        \draw[arrow] (s7) -- (s8);
+    \end{tikzpicture}
+    \caption{User Interaction Sequence Diagram}
+    \label{fig:user-interaction}
+\end{figure}
+
+\section{Database Design}
+
+\subsection{Entity Relationship Diagram}
+
+The database design consists of two primary entities: \texttt{USER} and \texttt{TRIP}. The relationship is one-to-many, where one user can have multiple associated trip records.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        entity/.style={draw, rectangle, minimum width=3cm, minimum height=0.8cm, align=center, font=\small\bfseries},
+        attr/.style={draw, ellipse, minimum width=2.2cm, minimum height=0.6cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        % USER entity
+        \node[entity, fill=blue!20] (user) at (0,0) {USER};
+        \node[attr] (uid) at (-2.5, 1.2) {id (PK)};
+        \node[attr] (uname) at (0, 1.5) {username};
+        \node[attr] (uemail) at (2.5, 1.2) {email};
+        \node[attr] (upass) at (-2.5, -1.2) {password};
+
+        % TRIP entity
+        \node[entity, fill=green!20] (trip) at (7,0) {TRIP};
+        \node[attr] (tid) at (5, 1.5) {id (PK)};
+        \node[attr] (tdest) at (7.5, 1.5) {destination};
+        \node[attr] (tbudget) at (9.5, 1) {budget};
+        \node[attr] (tdays) at (9.5, -1) {days};
+        \node[attr] (tclimate) at (7.5, -1.5) {climate};
+        \node[attr] (ttype) at (5, -1.5) {travel\_type};
+        \node[attr] (titi) at (3.5, 0) {itinerary};
+
+        \draw (user) -- (uid);
+        \draw (user) -- (uname);
+        \draw (user) -- (uemail);
+        \draw (user) -- (upass);
+        \draw (trip) -- (tid);
+        \draw (trip) -- (tdest);
+        \draw (trip) -- (tbudget);
+        \draw (trip) -- (tdays);
+        \draw (trip) -- (tclimate);
+        \draw (trip) -- (ttype);
+        \draw (trip) -- (titi);
+
+        % Relationship
+        \draw[thick] (user.east) -- node[above, font=\small]{1..N} (trip.west);
+    \end{tikzpicture}
+    \caption{Entity Relationship Diagram (ERD)}
+    \label{fig:erd}
+\end{figure}
+
+\subsection{USER Entity}
+
+The \texttt{USER} table stores authentication and account-related information. Attributes include:
+
+\begin{itemize}
+    \item \textbf{id}: Unique primary key
+    \item \textbf{username}: User login identifier
+    \item \textbf{email}: Registered email address
+    \item \textbf{password}: Encrypted user password (managed by Django's \texttt{AbstractUser})
+\end{itemize}
+
+\subsection{TRIP Entity}
+
+The \texttt{TRIP} table stores all generated travel plans and itinerary information. Attributes include:
+
+\begin{itemize}
+    \item \textbf{destination}: Predicted destination name
+    \item \textbf{budget}: User-specified travel budget (INR)
+    \item \textbf{days}: Trip duration in days
+    \item \textbf{climate}: Preferred climate type (Hot, Cold, Moderate)
+    \item \textbf{travel\_type}: Selected travel category (Adventure, Cultural, Family, Relaxation)
+    \item \textbf{itinerary}: Generated day-wise schedule (text)
+    \item \textbf{plan\_data}: JSON-formatted structured trip data including cost breakdown
+    \item \textbf{is\_deleted}: Soft-delete status flag
+    \item \textbf{deleted\_at}: Timestamp for soft-deletion event
+    \item \textbf{created\_at}: Timestamp of trip creation
+\end{itemize}
+
+\section{Technology Stack}
+
+The AI-Based Trip Planner Web Application utilizes a combination of backend frameworks, machine learning libraries, frontend technologies, and database systems to provide a scalable and intelligent travel planning platform.
+
+\begin{table}[H]
+    \centering
+    \caption{Technology Stack Breakdown}
+    \label{tab:tech-stack}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        \textbf{Component} & \textbf{Technology} & \textbf{Purpose} \\
+        \midrule
+        Backend & Python, Django & Web framework, routing, ORM handling \\
+        Machine Learning & Scikit-Learn, Pandas & Data processing and prediction model \\
+        Database & SQLite3 & Persistent data storage \\
+        Frontend & HTML5, CSS3, JavaScript & User interface and rendering \\
+        API Framework & Django REST Framework & JSON APIs and serialization \\
+        Model Serialization & Joblib & Saving and loading trained ML models \\
+        Version Control & Git & Source code management \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsection{Backend Technologies}
+
+The backend is implemented using \textbf{Python} and \textbf{Django} \cite{django2026}. Django provides secure authentication, database abstraction through ORM, URL routing, middleware support, and template rendering functionalities. Key advantages include:
+
+\begin{itemize}
+    \item Rapid development through built-in utilities
+    \item Built-in security (CSRF protection, password hashing)
+    \item Scalable and modular architecture
+    \item Easy database integration through ORM
+\end{itemize}
+
+\subsection{Machine Learning Technologies}
+
+The machine learning module uses \textbf{Scikit-learn} \cite{pedregosa2011}, \textbf{Pandas} \cite{mckinney2010}, and \textbf{NumPy} for:
+
+\begin{itemize}
+    \item Data preprocessing and cleaning
+    \item Categorical label encoding
+    \item Decision Tree classifier training
+    \item Real-time prediction inference
+\end{itemize}

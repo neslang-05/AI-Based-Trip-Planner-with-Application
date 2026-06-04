@@ -1,0 +1,60 @@
+\section{Background}
+
+The travel and tourism industry has undergone a major transformation over the last decade due to the rapid growth of digital technologies, internet accessibility, and artificial intelligence. Modern travelers increasingly depend on online platforms to discover destinations, compare travel costs, analyze weather conditions, book accommodations, and create travel itineraries. The emergence of smart technologies has shifted the tourism experience from agent-dependent planning to personalized, self-driven decision-making supported by intelligent systems \cite{buhalis2008}.
+
+Traditional tourism relied heavily on the expertise of travel agents who manually analyzed customer requirements such as destination preferences, travel duration, and budget limitations. These systems were limited by human capacity, static packages, and the absence of data-driven insights. The rise of the internet brought online booking platforms such as TripAdvisor and MakeMyTrip, which improved accessibility but still placed the burden of itinerary planning on the user \cite{ricci2015}.
+
+The increasing complexity of travel decisions and the vast amount of available information have created a need for intelligent systems that can automatically process user constraints and generate personalized travel recommendations. Machine learning provides the computational tools necessary to build such systems. Algorithms such as Decision Trees, Random Forests, and collaborative filtering techniques have shown strong performance in preference-based classification tasks relevant to travel planning \cite{pedregosa2011}.
+
+This project presents the design, development, and evaluation of an \textbf{AI-Based Trip Planner Web Application} that addresses these gaps by integrating machine learning-based recommendation, dynamic itinerary generation, and full-stack web development within a unified platform.
+
+\section{Problem Statement}
+
+Despite the growth of digital travel platforms, the following challenges persist:
+
+\begin{itemize}
+    \item Users must manually search through large volumes of destination data before making decisions, leading to information overload and decision fatigue.
+    \item Existing systems lack personalized, constraint-aware recommendations that simultaneously account for budget, climate preference, trip duration, and travel category.
+    \item No widely available platform provides end-to-end trip planning from destination recommendation to day-wise itinerary generation within a single interface.
+    \item Many tourism recommendation systems are limited by cold-start problems or require extensive historical user data to function effectively.
+\end{itemize}
+
+\section{Objectives}
+
+The primary objectives of this project are:
+
+\begin{enumerate}
+    \item To develop an AI-powered destination recommendation system using a Decision Tree classifier trained on a curated synthetic dataset of 36 Indian travel destinations.
+    \item To implement a dynamic itinerary generation engine that produces day-wise travel schedules, cost breakdowns, and activity suggestions based on predicted destinations.
+    \item To build a complete, responsive, and secure full-stack web application using Django and Django REST Framework.
+    \item To provide personalized user features including trip dashboard, history management, and soft-delete functionality.
+    \item To evaluate the system's recommendation accuracy, inference speed, and scalability.
+\end{enumerate}
+
+\section{Scope of the Project}
+
+The AI-Based Trip Planner Web Application covers the following scope:
+
+\begin{itemize}
+    \item Destination recommendation for 36 Indian travel destinations spanning all major states and union territories.
+    \item User inputs: travel budget (INR), number of days, climate preference (Hot, Cold, Moderate), and travel type (Adventure, Relaxation, Cultural, Family).
+    \item Automated day-wise itinerary generation with cost estimation and activity suggestions.
+    \item Secure user authentication, registration, and session management.
+    \item Personalized trip dashboard with history tracking, soft-delete, and trip restoration features.
+    \item RESTful API for frontend-backend communication.
+    \item Responsive web interface supporting desktop, tablet, and mobile devices.
+\end{itemize}
+
+\section{Organization of the Thesis}
+
+The remainder of this thesis is organized as follows:
+
+\begin{itemize}
+    \item \textbf{Chapter 2} presents a comprehensive review of related literature on travel planning systems, recommender systems, and machine learning applications in tourism.
+    \item \textbf{Chapter 3} describes the system analysis and design, including the architecture, data flow, ERD, and technology stack.
+    \item \textbf{Chapter 4} details the machine learning implementation covering dataset generation, feature engineering, the Decision Tree classifier, and model serialization.
+    \item \textbf{Chapter 5} explains the web application development process using Django, covering authentication, itinerary generation, and REST API development.
+    \item \textbf{Chapter 6} discusses the user interface and experience design, key application interfaces, and responsive design strategies.
+    \item \textbf{Chapter 7} covers testing and evaluation including unit testing, integration testing, and model performance analysis.
+    \item \textbf{Chapter 8} presents the conclusion and outlines future enhancement directions.
+\end{itemize}

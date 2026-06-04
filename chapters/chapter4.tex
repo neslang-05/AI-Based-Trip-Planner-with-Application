@@ -1,0 +1,195 @@
+\section{Dataset Generation and Preprocessing}
+
+One of the major challenges in travel recommendation research is the lack of publicly available datasets containing structured mappings between travel constraints and personalized destinations. Since real-world tourism datasets are often incomplete, inconsistent, or commercially restricted, this project utilizes a carefully designed synthetic dataset generation approach \cite{pedregosa2011}.
+
+The system includes a curated list of \textbf{36 Indian travel destinations} categorized according to:
+
+\begin{itemize}
+    \item Climate type (Hot, Cold, Moderate)
+    \item Travel category (Adventure, Cultural, Family, Relaxation, Religious)
+    \item Budget range (minimum and maximum estimated cost in INR)
+    \item Tourist attractiveness and suitability
+\end{itemize}
+
+To simulate realistic user behavior, the application generates approximately \textbf{5,000 synthetic travel records} using a randomized generation workflow. For each record, a destination is randomly selected from the curated list and a budget value is randomly sampled from within that destination's defined range. Trip duration is randomly assigned between 2 and 7 days.
+
+\subsection{Synthetic Dataset Generation Workflow}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=6cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (dest) {Destination Rules List (36 destinations)};
+        \node[box, fill=green!15, below=of dest] (sample) {Random Sampling (5000 records)};
+        \node[box, fill=orange!15, below=of sample] (frame) {Build Pandas DataFrame};
+        \node[box, fill=purple!15, below=of frame] (encode) {Label Encoding (Scikit-learn)};
+        \node[box, fill=red!15, below=of encode] (split) {Train/Test Split};
+        \node[box, fill=gray!15, below=of split] (train) {Decision Tree Training};
+
+        \draw[arrow] (dest) -- (sample);
+        \draw[arrow] (sample) -- (frame);
+        \draw[arrow] (frame) -- (encode);
+        \draw[arrow] (encode) -- (split);
+        \draw[arrow] (split) -- (train);
+    \end{tikzpicture}
+    \caption{Feature Transformation Pipeline}
+    \label{fig:feature-pipeline}
+\end{figure}
+
+Each generated record contains the following features:
+
+\begin{itemize}
+    \item \textbf{Budget}: Estimated travel cost in INR (sampled within destination-specific range)
+    \item \textbf{Days}: Trip duration (integer, 2--7 days)
+    \item \textbf{Climate}: Preferred climate type (categorical: Hot, Cold, Moderate)
+    \item \textbf{Travel Type}: Travel category (categorical: Adventure, Cultural, Family, Relaxation)
+    \item \textbf{Destination}: Target prediction label (one of 36 destination names)
+\end{itemize}
+
+\section{Feature Engineering and Encoding}
+
+Machine learning algorithms require numerical input values. Therefore, categorical features such as climate type and travel category must be converted into numeric representations before model training. The project uses \textbf{LabelEncoder} from Scikit-learn to encode categorical variables \cite{pedregosa2011}.
+
+\begin{table}[H]
+    \centering
+    \caption{Feature Encoding Mapping}
+    \label{tab:feature-encoding}
+    \begin{tabular}{@{}lll@{}}
+        \toprule
+        \textbf{Feature} & \textbf{Original Values} & \textbf{Encoded Values} \\
+        \midrule
+        Climate & Hot, Cold, Moderate & 0, 1, 2 \\
+        Travel Type & Adventure, Cultural, Family, Relaxation & 0, 1, 2, 3 \\
+        Destination & 36 destination names & 0 to 35 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+The encoded features form the input matrix $X = [\text{budget}, \text{days}, \text{climate}, \text{travel\_type}]$ used for model training, while the encoded destination label forms the target vector $y$.
+
+\section{Decision Tree Classifier Algorithm}
+
+The system utilizes the \textbf{DecisionTreeClassifier} algorithm from Scikit-learn \cite{pedregosa2011} with a maximum depth of 8. Decision Trees are non-parametric supervised learning algorithms that recursively split datasets into branches based on feature conditions. They are particularly suitable for travel recommendation systems because they can effectively handle both categorical and numerical variables while producing interpretable decision rules.
+
+\subsection{Advantages of Decision Trees}
+
+\begin{itemize}
+    \item Easy to interpret and explain to end users
+    \item Fast inference speed for real-time predictions
+    \item Handles categorical features efficiently after encoding
+    \item Requires minimal preprocessing compared to deep learning models
+    \item Suitable for multi-class classification with many target classes
+\end{itemize}
+
+\subsection{Mathematical Basis: Gini Impurity}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.2cm,
+        decision/.style={draw, diamond, aspect=2.5, minimum width=4cm, align=center, font=\small},
+        leaf/.style={draw, rounded corners, minimum width=3cm, minimum height=0.7cm, align=center, font=\small, fill=green!15},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[decision, fill=blue!15] (root) {Budget $\leq$ threshold?};
+        \node[decision, fill=blue!15, below left=1.2cm and 2cm of root] (left) {Climate = Cold?};
+        \node[decision, fill=blue!15, below right=1.2cm and 2cm of root] (right) {Travel Type?};
+        \node[leaf, below left=1.2cm and 0.5cm of left] (ll) {Shimla};
+        \node[leaf, below right=1.2cm and 0.5cm of left] (lr) {Rishikesh};
+        \node[leaf, below left=1.2cm and 0.5cm of right] (rl) {Goa};
+        \node[leaf, below right=1.2cm and 0.5cm of right] (rr) {Manali};
+
+        \draw[arrow] (root.west) -- node[above left, font=\scriptsize]{Yes} (left.north);
+        \draw[arrow] (root.east) -- node[above right, font=\scriptsize]{No} (right.north);
+        \draw[arrow] (left.west) -- node[above left, font=\scriptsize]{Yes} (ll.north);
+        \draw[arrow] (left.east) -- node[above right, font=\scriptsize]{No} (lr.north);
+        \draw[arrow] (right.west) -- node[above left, font=\scriptsize]{Relax} (rl.north);
+        \draw[arrow] (right.east) -- node[above right, font=\scriptsize]{Adv.} (rr.north);
+    \end{tikzpicture}
+    \caption{Decision Tree Splitting Logic Representation}
+    \label{fig:decision-tree}
+\end{figure}
+
+The Decision Tree uses the \textbf{Gini Impurity} metric to determine the optimal feature split during training:
+
+\begin{equation}
+    \text{Gini}(p) = 1 - \sum_{i=1}^{J} p_i^2
+    \label{eq:gini}
+\end{equation}
+
+Where:
+\begin{itemize}
+    \item $p_i$ represents the probability of an item belonging to class $i$
+    \item $J$ represents the total number of classes
+\end{itemize}
+
+Lower Gini impurity values indicate better node purity and more accurate classification splits. The algorithm recursively selects the feature and threshold that minimizes the weighted Gini impurity of the resulting child nodes.
+
+\section{Model Training and Serialization}
+
+After preprocessing and feature encoding, the dataset is divided into training and testing subsets. The model is trained using the \texttt{.fit(X, y)} method provided by Scikit-Learn:
+
+\begin{lstlisting}[language=Python, caption={Decision Tree Training Code}, label={lst:training}]
+from sklearn.tree import DecisionTreeClassifier
+import joblib
+
+model = DecisionTreeClassifier(
+    max_depth=8,
+    random_state=42
+)
+model.fit(X, y)
+
+# Serialize the trained model
+joblib.dump(model, "trip_model.pkl")
+joblib.dump(le_climate, "climate_encoder.pkl")
+joblib.dump(le_travel, "travel_encoder.pkl")
+joblib.dump(le_destination, "destination_encoder.pkl")
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=5.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (gen) {Synthetic Dataset Generation};
+        \node[box, fill=green!15, below=of gen] (enc) {Label Encoding (LabelEncoder)};
+        \node[box, fill=orange!15, below=of enc] (split) {Train/Test Split (80/20)};
+        \node[box, fill=purple!15, below=of split] (fit) {Model Fitting: \texttt{model.fit(X\_train, y\_train)}};
+        \node[box, fill=red!15, below=of fit] (eval) {Accuracy Evaluation: \texttt{model.score(X\_test, y\_test)}};
+        \node[box, fill=gray!15, below=of eval] (save) {Serialization: \texttt{joblib.dump()}};
+
+        \draw[arrow] (gen) -- (enc);
+        \draw[arrow] (enc) -- (split);
+        \draw[arrow] (split) -- (fit);
+        \draw[arrow] (fit) -- (eval);
+        \draw[arrow] (eval) -- (save);
+    \end{tikzpicture}
+    \caption{Training Pipeline}
+    \label{fig:training-pipeline}
+\end{figure}
+
+\subsection{Model Serialization}
+
+Once training is completed, the trained model and encoders are serialized using the \textbf{Joblib} library. Serialization enables the application to reuse trained models without retraining during runtime. Serialized files include:
+
+\begin{itemize}
+    \item \texttt{trip\_model.pkl} -- Trained Decision Tree classifier
+    \item \texttt{climate\_encoder.pkl} -- LabelEncoder for climate feature
+    \item \texttt{travel\_encoder.pkl} -- LabelEncoder for travel type feature
+    \item \texttt{destination\_encoder.pkl} -- LabelEncoder for destination labels
+\end{itemize}
+
+These files are loaded by the Django backend during application startup, enabling fast real-time predictions and efficient deployment. The benefits of serialization include:
+
+\begin{itemize}
+    \item Faster application startup (no re-training required)
+    \item Reduced computational overhead at inference time
+    \item Real-time recommendation support with sub-millisecond prediction latency
+    \item Easier deployment and portability across environments
+    \item Clear separation of training and inference environments
+\end{itemize}

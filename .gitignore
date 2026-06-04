@@ -1,0 +1,30 @@
+# LaTeX build artifacts
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.nlo
+*.nls
+*.out
+*.run.xml
+*.synctex.gz
+*.toc
+*.idx
+*.ilg
+*.ind
+*.bbl-SAVE-ERROR
+
+# Generated PDF (comment out if you want to track the PDF)
+# main.pdf
+
+# Editor-specific
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store

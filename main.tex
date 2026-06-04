@@ -1,0 +1,329 @@
+\documentclass[a4paper, 12pt]{report}
+\usepackage[T1]{fontenc}
+\usepackage{courier}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{geometry}
+\geometry{a4paper, top=25mm, left=38mm, bottom=25mm, right=25mm}
+
+% -------------------------------------------------
+% Document Formatting & Spacing
+% -------------------------------------------------
+\usepackage{setspace}
+\onehalfspacing
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{1.5em}
+\usepackage{indentfirst}
+\usepackage{microtype}
+
+% -------------------------------------------------
+% Graphics & Figures
+% -------------------------------------------------
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.eps,.png,.jpg,.pdf}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{positioning, shapes.geometric, shapes.multipart, arrows.meta, calc, fit, backgrounds}
+
+% -------------------------------------------------
+% Tables & Layout
+% -------------------------------------------------
+\usepackage{array}
+\usepackage{longtable}
+\usepackage{tabularx}
+\usepackage{ltxtable}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{makecell}
+\usepackage{cellspace}
+\usepackage{caption}
+\usepackage{subfig}  % loaded AFTER caption to avoid conflict; provides \subfloat
+\usepackage{adjustbox}
+\usepackage{varwidth}
+\usepackage{multicol}
+\renewcommand{\arraystretch}{1.3}
+
+% -------------------------------------------------
+% Math & Text Utilities
+% -------------------------------------------------
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage[normalem]{ulem}
+\usepackage{seqsplit}
+\usepackage[htt]{hyphenat}
+\usepackage{relsize}
+\setlength{\emergencystretch}{3em}
+
+% -------------------------------------------------
+% Algorithms, Code Listings & Terminal Boxes
+% -------------------------------------------------
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{listings}
+\usepackage{tcolorbox}
+\tcbuselibrary{listingsutf8, skins}
+
+\definecolor{gb}{rgb}{0,0.5,0.5}
+\definecolor{red}{rgb}{0.5,0,0}
+\definecolor{myblue}{RGB}{0,0,128}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstset{
+    keywordstyle=\small\bfseries\color{blue},
+    commentstyle=\small\color{gb},
+    stringstyle=\small\color{red},
+}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=5pt,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\lstdefinelanguage{TypeScript}{
+  keywords={typeof, new, true, false, catch, function, return, null, catch, switch, var, if, in, while, do, else, case, break, const, let, export, default, import, from, interface, type, implements, class, extends, async, await, return, void, public, private, protected, readonly},
+  keywordstyle=\color{blue}\bfseries,
+  ndkeywords={any, boolean, number, string, symbol, undefined, Object, Array, Promise},
+  ndkeywordstyle=\color{purple}\bfseries,
+  identifierstyle=\color{black},
+  sensitive=true,
+  comment=[l]{//},
+  morecomment=[s]{/*}{*/},
+  commentstyle=\color{codegreen}\ttfamily,
+  stringstyle=\color{codepurple}\ttfamily,
+  morestring=[b]',
+  morestring=[b]"
+}
+
+\tcbset{
+  terminal shell/.style={
+    enhanced,
+    colback=black!95!white,
+    colframe=black!80!white,
+    colupper=white!90!black,
+    boxrule=0.5mm,
+    top=2mm,
+    bottom=2mm,
+    left=2mm,
+    right=2mm,
+    attach boxed title to top center={yshift=-2mm},
+    boxed title style={
+      colframe=black!80!white,
+      colback=gray!20!black,
+      sharp corners,
+      top=1mm,
+      bottom=1mm,
+      left=2mm,
+      right=2mm,
+    },
+    listing only,
+    listing options={language=bash, breaklines=true, basicstyle=\ttfamily\color{green!90!black}, keywordstyle=\color{cyan}}
+  }
+}
+
+% -------------------------------------------------
+% Icons, Nomenclature, Navigation & Headers
+% -------------------------------------------------
+\usepackage{fontawesome}
+\usepackage{pifont}
+\usepackage{import}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{fancyhdr}
+\usepackage{nomencl}
+\makenomenclature
+\usepackage[nottoc,numbib]{tocbibind}
+
+\titleformat{\chapter}[display]
+  {\normalfont\huge\bfseries\filright}{Chapter \thechapter}{20pt}{\Huge}
+\titleformat{\section}
+  {\normalfont\large\bfseries}{\thesection}{1em}{}
+
+\setcounter{secnumdepth}{5}
+\setcounter{tocdepth}{5}
+
+% -------------------------------------------------
+% Bibliography
+% -------------------------------------------------
+\usepackage[style=ieee, backend=biber]{biblatex}
+\addbibresource{bibliography/references.bib}
+\DefineBibliographyStrings{english}{
+  bibliography = {REFERENCES},
+}
+
+% -------------------------------------------------
+% Hyperlinks (Must be loaded last)
+% -------------------------------------------------
+\usepackage{xurl}
+\usepackage[colorlinks=true, linkcolor=black, citecolor=black, urlcolor=black, hypertexnames=false]{hyperref}
+
+
+
+\begin{document}
+
+% TITLE PAGE
+\begin{titlepage}
+    \input{chapters/title-page.tex}
+\end{titlepage}
+
+\clearpage
+\thispagestyle{empty}
+\mbox{}
+\newpage
+
+\newpage
+\thispagestyle{empty}
+% DEDICATION
+\input{chapters/dedication.tex}
+
+\newpage
+\thispagestyle{empty}
+% Inside Title Page
+\input{chapters/title-page.tex}
+
+% Set Roman page numbering
+\pagenumbering{roman}
+
+% bonafide-certificate
+\newpage
+\setcounter{page}{1}
+\phantomsection
+\addcontentsline{toc}{chapter}{BONAFIDE CERTIFICATE}
+\input{chapters/bonafide-certificate.tex}
+
+
+
+% ----------------DECLARATION----------------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{DECLARATION}
+\input{chapters/decleration-OinamDinibash.tex}
+
+\newpage
+\input{chapters/decleration-LabaMoreirangthem.tex}
+
+\newpage
+\input{chapters/decleration-DeemsonPukhrambam.tex}
+
+\newpage
+\input{chapters/decleration-MathiuthailluPanmei.tex}
+% ---------------------------------------------------
+
+% ---------------------ACKNOWLEDGEMENT--------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{ACKNOWLEDGEMENT}
+\input{chapters/acknowledgement.tex}
+% -------------------------------------------------
+
+% ------------------ABSTRACT------------------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{ABSTRACT}
+\begin{center}
+    {\fontsize{16}{19}\selectfont\bfseries ABSTRACT}
+\end{center}
+\input{chapters/abstract.tex}
+% --------------------------------------------------
+
+
+% --------------------TABLE OF CONTENTS------------
+\newpage
+\renewcommand{\contentsname}{\centering \Huge Table of Contents}
+\tableofcontents
+% ---------------------------------------------------
+
+% -----------------LIST OF TABLES-----------------
+\newpage
+\listoftables
+% ---------------------------------------------------
+
+
+% -----------------LIST OF FIGURES-----------------
+\newpage
+\listoffigures
+% ---------------------------------------------------
+
+
+% ---------------------SYMBOLS AND ACRONYMS--------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{Symbols and Acronyms}
+\renewcommand{\nomname}{Symbols and Acronyms}
+\markboth{Symbols and Acronyms}{Symbols and Acronyms}
+\input{chapters/abbreviations.tex} % This loads the list of \nomenclature entries
+\printnomenclature
+% --------------------------------------------------------
+
+
+% Switch to Arabic page numbering
+\newpage
+\pagenumbering{arabic}
+
+
+% -----------------CHAPTER-1-----------------
+\chapter{Introduction}
+\input{chapters/chapter1.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-2-----------------
+\chapter{Literature Review}
+\input{chapters/chapter2.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-3-----------------
+\chapter{System Analysis and Design}
+\input{chapters/chapter3.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-4-----------------
+\chapter{Machine Learning Implementation}
+\input{chapters/chapter4.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-5-----------------
+\chapter{Web Application Development}
+\input{chapters/chapter5.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-6-----------------
+\chapter{User Interface and Experience}
+\input{chapters/chapter6.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-7-----------------
+\chapter{Testing and Evaluation}
+\input{chapters/chapter7.tex}
+% ----------------------------------
+
+% -----------------CHAPTER-8-----------------
+\chapter{Conclusion and Future Scope}
+\input{chapters/conclusion.tex}
+% ----------------------------------
+
+% --------------------REFERENCES--------------------
+\newpage
+\phantomsection
+\addcontentsline{toc}{chapter}{References}
+\printbibliography
+% -------------------------------------------------------
+
+\end{document}

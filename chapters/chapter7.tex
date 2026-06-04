@@ -1,0 +1,250 @@
+\section{Unit Testing}
+
+Unit testing focuses on validating individual modules and functions independently to ensure they behave as expected. In the AI-Based Trip Planner Web Application, unit tests are implemented to verify the correctness of critical backend logic, machine learning utilities, itinerary generation mechanisms, and data transformation functions. The testing process is primarily conducted using Python's built-in \texttt{unittest} framework and Django's testing utilities.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (write) {Write Unit Tests (\texttt{TestCase})};
+        \node[box, fill=green!15, below=of write] (run) {Run Tests (\texttt{python manage.py test})};
+        \node[box, fill=orange!15, below=of run] (check) {Check Test Output (Pass/Fail)};
+        \node[box, fill=purple!15, below=of check] (fix) {Fix Failing Tests};
+        \node[box, fill=red!15, below=of fix] (refactor) {Refactor and Re-run};
+
+        \draw[arrow] (write) -- (run);
+        \draw[arrow] (run) -- (check);
+        \draw[arrow] (check) -- (fix);
+        \draw[arrow] (fix) -- (refactor);
+        \draw[arrow, dashed] (refactor.west) -- ++(-0.6,0) |- (run.west);
+    \end{tikzpicture}
+    \caption{Unit Testing Workflow}
+    \label{fig:unit-testing}
+\end{figure}
+
+The major objectives of unit testing include:
+
+\begin{itemize}
+    \item Detecting logical errors in isolated components
+    \item Validating data transformation functions
+    \item Ensuring accurate cost calculations
+    \item Verifying machine learning preprocessing
+    \item Maintaining code reliability during updates
+\end{itemize}
+
+\subsection{Testing the Dynamic Itinerary Generator}
+
+The \texttt{generate\_trip\_plan} module is one of the most critical components of the application. Unit tests are designed to validate:
+
+\begin{itemize}
+    \item Budget calculations and cost multipliers
+    \item Itinerary structures and day allocation logic
+    \item Percentage distributions for budget breakdown
+\end{itemize}
+
+One important validation ensures that the generated budget breakdown percentages always total exactly 100\%:
+
+\begin{itemize}
+    \item Accommodation = 40\%
+    \item Food = 25\%
+    \item Transportation = 20\%
+    \item Activities = 15\%
+    \item \textbf{Total = 100\%}
+\end{itemize}
+
+This test prevents logical inconsistencies in financial reporting and ensures accurate travel budgeting.
+
+\subsection{Testing LabelEncoder Transformations}
+
+Unit tests verify that LabelEncoder transformations are bijective -- meaning the encoding and inverse-encoding operations are consistent. Tests confirm:
+
+\begin{itemize}
+    \item \texttt{climate\_encoder.transform(['hot'])} returns a consistent integer value
+    \item \texttt{climate\_encoder.inverse\_transform([value])} returns the original string correctly
+    \item All 36 destinations are correctly encoded and decodable without collisions
+    \item Climate values (hot, cold, moderate) map to exactly 3 distinct classes
+    \item Travel type values map to exactly 4 distinct classes
+\end{itemize}
+
+\begin{lstlisting}[language=Python, caption={Unit Test for LabelEncoder}, label={lst:encoder-test}]
+import unittest
+from sklearn.preprocessing import LabelEncoder
+
+class TestLabelEncoder(unittest.TestCase):
+    def setUp(self):
+        self.encoder = LabelEncoder()
+        self.encoder.fit(['hot', 'cold', 'moderate'])
+
+    def test_transform(self):
+        result = self.encoder.transform(['hot'])
+        self.assertIsInstance(result[0], (int, ))
+
+    def test_inverse_transform(self):
+        encoded = self.encoder.transform(['cold'])
+        decoded = self.encoder.inverse_transform(encoded)
+        self.assertEqual(decoded[0], 'cold')
+
+    def test_all_classes_covered(self):
+        self.assertEqual(len(self.encoder.classes_), 3)
+\end{lstlisting}
+
+\subsection{Testing Database Models}
+
+Unit tests for the \texttt{Trip} model verify:
+
+\begin{itemize}
+    \item Trip objects are created successfully with valid field values
+    \item Default values are correctly applied (e.g., \texttt{is\_deleted=False})
+    \item Soft-delete behavior sets \texttt{is\_deleted=True} and records \texttt{deleted\_at}
+    \item Trip restoration correctly resets \texttt{is\_deleted=False}
+    \item JSON plan data is serialized and deserialized correctly
+\end{itemize}
+
+\section{Integration Testing}
+
+Integration testing validates the interaction between system components to ensure end-to-end functionality operates correctly. The AI-Based Trip Planner Web Application undergoes integration testing across API endpoints, database interactions, and authentication flows.
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (client) {Test Client (Django TestClient)};
+        \node[box, fill=green!15, below=of client] (api) {API Endpoint Request};
+        \node[box, fill=orange!15, below=of api] (view) {View + Serializer Processing};
+        \node[box, fill=purple!15, below=of view] (ml) {ML Prediction};
+        \node[box, fill=red!15, below=of ml] (db) {Database Operation};
+        \node[box, fill=gray!15, below=of db] (resp) {Response Assertion};
+
+        \draw[arrow] (client) -- (api);
+        \draw[arrow] (api) -- (view);
+        \draw[arrow] (view) -- (ml);
+        \draw[arrow] (ml) -- (db);
+        \draw[arrow] (db) -- (resp);
+    \end{tikzpicture}
+    \caption{Integration Testing Architecture}
+    \label{fig:integration-testing}
+\end{figure}
+
+\subsection{API Endpoint Testing}
+
+API integration tests use Django's \texttt{APITestCase} to send simulated HTTP requests to the recommendation endpoint and verify:
+
+\begin{itemize}
+    \item HTTP 200 OK response for valid input payloads
+    \item HTTP 400 Bad Request response for invalid or missing fields
+    \item Returned JSON contains required keys: \texttt{destination}, \texttt{budget}, \texttt{itinerary}
+    \item Destination in response is a valid known destination string
+    \item Cost breakdown values sum correctly to the submitted budget
+\end{itemize}
+
+\subsection{Database Interaction Testing}
+
+Database integration tests verify:
+
+\begin{itemize}
+    \item Trip records are saved correctly after a successful recommendation API call
+    \item Soft-deleted trips do not appear in the active trips query
+    \item Recycled trips reappear in the active trips list
+    \item Trip counts increase correctly per user session
+\end{itemize}
+
+\subsection{Authentication and Session Testing}
+
+Authentication integration tests verify:
+
+\begin{itemize}
+    \item Unauthenticated users are redirected to the login page for protected routes
+    \item Valid credentials create an active session
+    \item Invalid credentials return appropriate error messages
+    \item Logout correctly clears the session
+    \item CSRF token validation prevents unauthorized form submissions
+\end{itemize}
+
+\section{Model Accuracy and Performance}
+
+\subsection{Accuracy Evaluation}
+
+The Decision Tree classifier is evaluated on a held-out test subset (20\% of the synthetic dataset) using the standard accuracy metric:
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (data) {Synthetic Dataset (5000 records)};
+        \node[box, fill=green!15, below=of data] (split) {Train/Test Split (80\%/20\%)};
+        \node[box, fill=orange!15, below=of split] (train) {Decision Tree Training (max\_depth=8)};
+        \node[box, fill=purple!15, below=of train] (predict) {Prediction on Test Set};
+        \node[box, fill=red!15, below=of predict] (eval) {Accuracy Evaluation};
+
+        \draw[arrow] (data) -- (split);
+        \draw[arrow] (split) -- (train);
+        \draw[arrow] (train) -- (predict);
+        \draw[arrow] (predict) -- (eval);
+    \end{tikzpicture}
+    \caption{Model Training and Evaluation Pipeline}
+    \label{fig:eval-pipeline}
+\end{figure}
+
+The model achieves high classification accuracy due to:
+
+\begin{itemize}
+    \item \textbf{Consistent synthetic data}: Destinations are generated with strict budget ranges, climate types, and travel categories, creating highly separable class boundaries.
+    \item \textbf{Optimal tree depth}: The maximum depth of 8 provides sufficient complexity to distinguish between 36 destination classes without overfitting.
+    \item \textbf{Feature effectiveness}: The four input features (budget, days, climate, travel type) provide strong discriminative information for destination classification.
+    \item \textbf{Controlled randomness}: The \texttt{random\_state=42} parameter ensures reproducible results across different training runs.
+\end{itemize}
+
+\subsection{Inference Speed and Runtime Performance}
+
+\begin{figure}[H]
+    \centering
+    \begin{tikzpicture}[
+        node distance=1.0cm,
+        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
+        arrow/.style={-Stealth, thick}
+    ]
+        \node[box, fill=blue!15] (input) {Input Feature Vector (4 features)};
+        \node[box, fill=green!15, below=of input] (load) {Load Serialized Model (Joblib)};
+        \node[box, fill=orange!15, below=of load] (encode) {Encode Input Features};
+        \node[box, fill=purple!15, below=of encode] (pred) {Decision Tree Traversal};
+        \node[box, fill=red!15, below=of pred] (decode) {Decode Prediction to Destination Name};
+        \node[box, fill=gray!15, below=of decode] (out) {Return Prediction ($<$5ms)};
+
+        \draw[arrow] (input) -- (load);
+        \draw[arrow] (load) -- (encode);
+        \draw[arrow] (encode) -- (pred);
+        \draw[arrow] (pred) -- (decode);
+        \draw[arrow] (decode) -- (out);
+    \end{tikzpicture}
+    \caption{Prediction Runtime Workflow}
+    \label{fig:prediction-runtime}
+\end{figure}
+
+Inference performance characteristics:
+
+\begin{itemize}
+    \item \textbf{Model loading time}: Under 100ms at application startup (Joblib deserialization)
+    \item \textbf{Per-request prediction latency}: Under 5ms for a single prediction
+    \item \textbf{Concurrent request handling}: Django's WSGI server handles multiple concurrent requests with negligible ML overhead
+\end{itemize}
+
+\subsection{System Scalability Considerations}
+
+The system is designed to support scaling through the following strategies:
+
+\begin{itemize}
+    \item \textbf{Stateless ML inference}: The serialized model is loaded once at startup and shared across all requests without reloading.
+    \item \textbf{Database connection pooling}: Django's ORM supports connection pooling for high-traffic scenarios.
+    \item \textbf{Static file serving}: CSS, JavaScript, and images can be offloaded to a CDN for improved global delivery.
+    \item \textbf{Horizontal scaling}: The application can be deployed across multiple workers using Gunicorn or uWSGI behind a load balancer.
+    \item \textbf{Database migration}: SQLite3 can be replaced with PostgreSQL for production deployments requiring concurrent write support.
+\end{itemize}
