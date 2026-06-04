@@ -4,7 +4,7 @@ The AI-Based Trip Planner Web Application is developed using the \textbf{Django}
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Django MVT Architecture.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Django MVT Architecture.png}
     \caption{Django MVT Architecture}
     \label{fig:mvt-architecture}
 \end{figure}
@@ -56,7 +56,7 @@ The views layer handles business logic and request processing. The \textbf{reque
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Request Handling Workflow.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Request Handling Workflow.png}
     \caption{Request Handling Workflow}
     \label{fig:request-workflow}
 \end{figure}
@@ -73,7 +73,7 @@ The authentication workflow is as follows:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Authentication Workflow.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Authentication Workflow.png}
     \caption{Authentication Workflow}
     \label{fig:auth-workflow}
 \end{figure}
@@ -102,7 +102,7 @@ The itinerary engine automatically:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Itinerary Generation Pipeline.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Itinerary Generation Pipeline.png}
     \caption{Itinerary Generation Pipeline}
     \label{fig:itinerary-pipeline}
 \end{figure}
@@ -126,7 +126,25 @@ The application uses \textbf{Django REST Framework} for API development and JSON
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/API Communication Architecture.png}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tikzpicture}[
+        node distance=1.2cm and 1cm,
+        client/.style={draw, rectangle, fill=orange!10, text width=2.8cm, align=center, rounded corners, minimum height=1cm, font=\small\bfseries},
+        endpoint/.style={draw, rectangle, fill=green!10, text width=2.8cm, align=center, rounded corners, minimum height=1cm, font=\small\bfseries},
+        backend/.style={draw, rectangle, fill=blue!10, text width=2.8cm, align=center, rounded corners, minimum height=1cm, font=\small\bfseries},
+        arrow/.style={-latex, thick}
+    ]
+        \node (frontend) [client] {Frontend Client\\(HTML/JS)};
+        \node (api) [endpoint, right=of frontend] {API Endpoint\\(Django REST)};
+        \node (django) [backend, right=of api] {Django Backend\\\& ML Model};
+        
+        \draw [arrow] ([yshift=2mm]frontend.east) -- node[above, font=\scriptsize] {HTTP POST (JSON)} ([yshift=2mm]api.west);
+        \draw [arrow] ([yshift=-2mm]api.west) -- node[below, font=\scriptsize] {JSON Response} ([yshift=-2mm]frontend.east);
+        
+        \draw [arrow] ([yshift=2mm]api.east) -- node[above, font=\scriptsize] {Validated Data} ([yshift=2mm]django.west);
+        \draw [arrow] ([yshift=-2mm]django.west) -- node[below, font=\scriptsize] {Result Dict} ([yshift=-2mm]api.east);
+    \end{tikzpicture}
+    \end{adjustbox}
     \caption{API Communication Architecture}
     \label{fig:api-architecture}
 \end{figure}
@@ -169,11 +187,11 @@ The API returns structured JSON responses containing the predicted destination, 
     \centering
     \caption{API Endpoint Specifications}
     \label{tab:api-endpoints}
-    \begin{tabularx}{\textwidth}{@{}lllX@{}}
+    \begin{tabularx}{\textwidth}{@{} >{\raggedright\arraybackslash}p{5.2cm} l >{\raggedright\arraybackslash}p{3.5cm} X @{}}
         \toprule
         \textbf{Endpoint} & \textbf{Method} & \textbf{Payload} & \textbf{Response} \\
         \midrule
-        \texttt{/api/recommendation/} & POST & \{budget, days, climate, travel\_type\} & JSON destination, itinerary, and cost breakdown \\
+        \texttt{/api/recommendation/} & POST & \{budget, \allowbreak days, \allowbreak climate, \allowbreak travel\_type\} & JSON destination, itinerary, and cost breakdown \\
         \texttt{/} & GET & --- & Home page template \\
         \texttt{/plan-trip/} & GET & --- & Trip planning form template \\
         \texttt{/results/} & GET & data query param & Results view template \\

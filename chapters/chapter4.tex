@@ -17,7 +17,7 @@ To simulate realistic user behavior, the application generates approximately \te
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Synthetic Dataset Generation Workflow.png}
+    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{images/Synthetic Dataset Generation Workflow.png}
     \caption{Synthetic Dataset Generation Workflow}
     \label{fig:feature-pipeline}
 \end{figure}
@@ -51,7 +51,7 @@ Machine learning algorithms require numerical input values. Therefore, categoric
     \end{tabular}
 \end{table}
 
-The encoded features form the input matrix $X = [\text{budget}, \text{days}, \text{climate}, \text{travel\_type}]$ used for model training, while the encoded destination label forms the target vector $y$.
+The encoded features form the input matrix $X = [\text{budget}, \allowbreak \text{days}, \allowbreak \text{climate}, \allowbreak \text{travel\_type}]$ used for model training, while the encoded destination label forms the target vector $y$.
 
 \section{Decision Tree Classifier Algorithm}
 
@@ -71,7 +71,7 @@ The system utilizes the \textbf{DecisionTreeClassifier} algorithm from Scikit-le
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Decision Tree Workflow.png}
+    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{images/Decision Tree Workflow.png}
     \caption{Decision Tree Splitting Logic Representation}
     \label{fig:decision-tree}
 \end{figure}
@@ -114,7 +114,24 @@ joblib.dump(le_destination, "destination_encoder.pkl")
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Training Pipeline.png}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tikzpicture}[
+        node distance=1.2cm and 0.8cm,
+        box/.style={draw, rectangle, fill=blue!5, text width=2.5cm, align=center, rounded corners, minimum height=0.8cm, font=\small},
+        arrow/.style={-latex, thick}
+    ]
+        \node (raw) [box] {Raw Data};
+        \node (prep) [box, right=of raw] {Preprocessing \& Encoding};
+        \node (split) [box, right=of prep] {Train/Test Split};
+        \node (train) [box, right=of split] {Decision Tree Training};
+        \node (ser) [box, right=of train] {Joblib Serialization};
+        
+        \draw [arrow] (raw) -- (prep);
+        \draw [arrow] (prep) -- (split);
+        \draw [arrow] (split) -- (train);
+        \draw [arrow] (train) -- (ser);
+    \end{tikzpicture}
+    \end{adjustbox}
     \caption{Training Pipeline}
     \label{fig:training-pipeline}
 \end{figure}

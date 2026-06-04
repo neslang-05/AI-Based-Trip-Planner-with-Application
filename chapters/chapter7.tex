@@ -4,7 +4,7 @@ Unit testing focuses on validating individual modules and functions independentl
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Unit Testing Workflow.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Unit Testing Workflow.png}
     \caption{Unit Testing Workflow}
     \label{fig:unit-testing}
 \end{figure}
@@ -93,7 +93,7 @@ Integration testing validates the interaction between system components to ensur
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Integration Testing Architecture.png}
+    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Integration Testing Architecture.png}
     \caption{Integration Testing Architecture}
     \label{fig:integration-testing}
 \end{figure}
@@ -141,7 +141,7 @@ The Decision Tree classifier is evaluated on a held-out test subset (20\% of the
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Model Training and Evaluation Pipeline.png}
+    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{images/Model Training and Evaluation Pipeline.png}
     \caption{Model Training and Evaluation Pipeline}
     \label{fig:eval-pipeline}
 \end{figure}
@@ -159,7 +159,30 @@ The model achieves high classification accuracy due to:
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth]{images/Prediction Runtime Workflow.png}
+    \begin{adjustbox}{max width=\textwidth}
+    \begin{tikzpicture}[
+        node distance=1.2cm and 0.8cm,
+        stepbox/.style={draw, rectangle, fill=teal!5, text width=2.2cm, align=center, rounded corners, minimum height=0.8cm, font=\small},
+        storage/.style={draw, rectangle, fill=orange!10, text width=2.0cm, align=center, rounded corners, minimum height=0.8cm, font=\small},
+        arrow/.style={-latex, thick}
+    ]
+        \node (input) [stepbox] {User Inputs};
+        \node (encode) [stepbox, right=of input] {Feature Encoding};
+        \node (model) [stepbox, right=of encode] {Model Inference};
+        \node (itinerary) [stepbox, right=of model] {Itinerary Gen};
+        \node (output) [stepbox, right=of itinerary] {JSON Response};
+        
+        \node (joblib) [storage, above=of model] {Joblib Model};
+        
+        \draw [arrow] (input) -- (encode);
+        \draw [arrow] (encode) -- (model);
+        \draw [arrow] (model) -- (itinerary);
+        \draw [arrow] (itinerary) -- (output);
+        
+        \draw [arrow] (joblib) -- (model);
+        \draw [arrow] (joblib.south) -| (encode.north);
+    \end{tikzpicture}
+    \end{adjustbox}
     \caption{Prediction Runtime Workflow}
     \label{fig:prediction-runtime}
 \end{figure}
