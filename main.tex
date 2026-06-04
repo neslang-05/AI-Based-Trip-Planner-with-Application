@@ -153,7 +153,7 @@
 \usepackage[nottoc,numbib]{tocbibind}
 
 \titleformat{\chapter}[display]
-  {\normalfont\huge\bfseries\filright}{Chapter \thechapter}{20pt}{\Huge}
+  {\normalfont\huge\bfseries\filright}{\chaptertitlename\ \thechapter}{20pt}{\Huge}
 \titleformat{\section}
   {\normalfont\large\bfseries}{\thesection}{1em}{}
 
@@ -324,6 +324,12 @@
 \phantomsection
 \addcontentsline{toc}{chapter}{References}
 \printbibliography
+% -------------------------------------------------------
+
+% --------------------APPENDIX----------------------
+\newpage
+\appendix
+\input{chapters/appendix.tex}
 % -------------------------------------------------------
 
 \end{document}

@@ -1,0 +1,1391 @@
+APPENDIX A: SOURCE CODE
+	     Train.model.py
+import argparse
+import random
+import pandas as pd
+from sklearn.preprocessing import LabelEncoder
+from sklearn.tree import DecisionTreeClassifier
+import joblib
+import os
+
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_PATH = os.path.join(BASE_DIR, "data", "trip_dataset.csv")
+
+
+# -----------------------------
+# 1. DESTINATION RULES (used only for synthetic fallback)
+# All 36 Indian States and Union Territories with representative tourist destinations
+# -----------------------------
+DESTINATIONS = [
+    ("Tirupati", "hot", "cultural", 15000, 35000),
+    ("Tawang", "cold", "adventure", 25000, 50000),
+    ("Kaziranga", "hot", "adventure", 20000, 45000),
+    ("Bodh Gaya", "hot", "religious", 12000, 30000),
+    ("Chitrakote", "hot", "relaxation", 10000, 25000),
+    ("Baga Beach", "hot", "relaxation", 15000, 40000),
+    ("Gir Wildlife Sanctuary", "hot", "adventure", 18000, 40000),
+    ("Kurukshetra", "hot", "cultural", 10000, 25000),
+    ("Shimla", "cold", "family", 15000, 35000),
+    ("Ranchi", "moderate", "family", 12000, 30000),
+    ("Hampi", "moderate", "cultural", 12000, 30000),
+    ("Alleppey Backwaters", "hot", "relaxation", 20000, 45000),
+    ("Khajuraho", "hot", "cultural", 15000, 35000),
+    ("Ajanta Caves", "hot", "cultural", 12000, 30000),
+    ("Loktak Lake", "moderate", "relaxation", 12000, 28000),
+    ("Cherrapunji", "moderate", "adventure", 15000, 35000),
+    ("Aizawl", "moderate", "cultural", 12000, 28000),
+    ("Kohima", "moderate", "cultural", 12000, 28000),
+    ("Puri", "hot", "religious", 12000, 30000),
+    ("Golden Temple", "hot", "religious", 10000, 25000),
+    ("Jaipur", "hot", "cultural", 12000, 35000),
+    ("Gangtok", "moderate", "family", 15000, 35000),
+    ("Mahabalipuram", "hot", "cultural", 12000, 30000),
+    ("Hyderabad", "hot", "cultural", 12000, 30000),
+    ("Ujjayanta Palace", "hot", "cultural", 10000, 25000),
+    ("Agra", "hot", "cultural", 12000, 35000),
+    ("Rishikesh", "moderate", "adventure", 10000, 28000),
+    ("Darjeeling", "cold", "family", 15000, 35000),
+    ("Port Blair", "hot", "relaxation", 20000, 45000),
+    ("Rock Garden", "moderate", "family", 10000, 25000),
+    ("Daman Beach", "hot", "relaxation", 12000, 30000),
+    ("Srinagar", "cold", "relaxation", 20000, 45000),
+    ("Pangong Lake", "cold", "adventure", 30000, 60000),
+    ("Minicoy Island", "hot", "relaxation", 25000, 50000),
+    ("Pondicherry", "hot", "relaxation", 12000, 30000),
+    ("India Gate", "hot", "cultural", 10000, 30000),
+]
+
+
+# -----------------------------
+# 2. DATASET LOADING / GENERATION
+# -----------------------------
+
+
+if os.path.exists(DATA_PATH):
+    # load a dataset exported from Kaggle (or any other source) into the training folder
+    data = pd.read_csv(DATA_PATH)
+    # basic cleaning: ensure important columns are present and numeric where expected
+    expected_cols = {"budget", "days", "climate", "travel_type", "destination"}
+    if not expected_cols.issubset(set(data.columns)):
+        raise ValueError(f"Dataset at {DATA_PATH} missing required columns: {expected_cols - set(data.columns)}")
+    # coerce numeric fields and drop rows with missing values
+    data["budget"] = pd.to_numeric(data["budget"], errors="coerce")
+    data["days"] = pd.to_numeric(data["days"], errors="coerce")
+    data = data.dropna(subset=["budget", "days", "climate", "travel_type", "destination"])
+    
+    # remove image_url column if it exists
+    if "image_url" in data.columns:
+        data = data.drop(columns=["image_url"])
+
+
+    print(f"Loaded dataset from {DATA_PATH}:", data.shape)
+else:
+    
+    rows = []
+
+
+    for _ in range(5000):
+        destination, climate, travel_type, min_budget, max_budget = random.choice(DESTINATIONS)
+
+
+        budget = random.randint(min_budget, max_budget)
+        days = random.randint(2, 7)
+
+
+        rows.append([
+            budget,
+            days,
+            climate,
+            travel_type,
+            destination
+        ])
+
+
+    data = pd.DataFrame(
+        rows,
+        columns=["budget", "days", "climate", "travel_type", "destination"]
+    )
+
+
+    print("Synthetic dataset generated:", data.shape)
+
+
+# -----------------------------
+# 3. ENCODING
+# -----------------------------
+le_climate = LabelEncoder()
+le_travel = LabelEncoder()
+le_destination = LabelEncoder()
+
+
+data["climate"] = le_climate.fit_transform(data["climate"])
+data["travel_type"] = le_travel.fit_transform(data["travel_type"])
+data["destination"] = le_destination.fit_transform(data["destination"])
+
+
+X = data[["budget", "days", "climate", "travel_type"]]
+y = data["destination"]
+
+
+# -----------------------------
+# 4. TRAIN MODEL
+# -----------------------------
+model = DecisionTreeClassifier(
+    max_depth=8,
+    random_state=42
+)
+
+
+model.fit(X, y)
+
+
+# -----------------------------
+# 5. SAVE MODEL FILES
+# -----------------------------
+joblib.dump(model, os.path.join(BASE_DIR, "trip_model.pkl"))
+joblib.dump(le_climate, os.path.join(BASE_DIR, "climate_encoder.pkl"))
+joblib.dump(le_travel, os.path.join(BASE_DIR, "travel_encoder.pkl"))
+joblib.dump(le_destination, os.path.join(BASE_DIR, "destination_encoder.pkl"))
+
+
+print(f"Model training complete. Model saved for {le_destination.classes_.size} destinations.")
+
+
+
+
+
+service.py
+import os
+import joblib
+import numpy as np
+from django.conf import settings
+
+
+# Load model paths
+ML_FOLDER = os.path.join(settings.BASE_DIR, "trips", "ml")
+
+
+model = joblib.load(os.path.join(ML_FOLDER, "trip_model.pkl"))
+climate_encoder = joblib.load(os.path.join(ML_FOLDER, "climate_encoder.pkl"))
+travel_encoder = joblib.load(os.path.join(ML_FOLDER, "travel_encoder.pkl"))
+destination_encoder = joblib.load(os.path.join(ML_FOLDER, "destination_encoder.pkl"))
+
+
+def predict_destination(budget, days, climate, travel_type):
+    # Encode categorical values
+    climate_encoded = climate_encoder.transform([climate])[0]
+    travel_encoded = travel_encoder.transform([travel_type])[0]
+
+
+    # Prepare input
+    input_data = np.array([[budget, days, climate_encoded, travel_encoded]])
+
+
+    # Predict
+    prediction = model.predict(input_data)
+
+
+    # Decode result
+    destination = destination_encoder.inverse_transform(prediction)[0]
+
+
+    return destination
+urls.py
+from django.urls import path
+from .views import (
+    TripRecommendationView,
+    home_page,
+    destinations_page,
+    plan_trip_page,
+    trip_results_page,
+    my_trips_page,
+    trip_detail_page,
+    delete_trip,
+    recycle_trip,
+    login_page,
+    logout_page,
+    register_page,
+)
+
+
+urlpatterns = [
+    path('', home_page, name='home'),
+    path('login/', login_page, name='login'),
+    path('logout/', logout_page, name='logout'),
+    path('register/', register_page, name='register'),
+    path('destinations/', destinations_page, name='destinations'),
+    path('plan-trip/', plan_trip_page, name='plan-trip'),
+    path('results/', trip_results_page, name='trip-results'),
+    path('my-trips/', my_trips_page, name='my-trips'),
+    path('trips/<int:trip_id>/', trip_detail_page, name='trip-detail'),
+    path('trips/<int:trip_id>/delete/', delete_trip, name='delete-trip'),
+    path('trips/<int:trip_id>/recycle/', recycle_trip, name='recycle-trip'),
+    path('recommend/', TripRecommendationView.as_view(), name='recommend-trip'),
+]
+App.py
+from django.apps import AppConfig
+
+
+class TripsConfig(AppConfig):
+    name = 'trips'
+
+
+serializers.py
+from rest_framework import serializers
+from .models import Trip
+
+
+class TripSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Trip
+        fields = "__all__"
+        read_only_fields = ["itinerary", "created_at", "plan_data"]
+
+
+class TripRequestSerializer(serializers.Serializer):
+    days = serializers.IntegerField()
+    budget = serializers.FloatField()
+    climate = serializers.CharField()
+    travel_type = serializers.CharField()
+    travelers = serializers.IntegerField(required=False, default=1)
+    accommodation = serializers.CharField(required=False)
+    interests = serializers.ListField(child=serializers.CharField(), required=False, default=list)
+    special_requests = serializers.CharField(required=False, allow_blank=True)
+    image = serializers.ImageField(required=False, allow_null=True)
+
+models.py
+from django.db import models
+from django.core.files.storage import default_storage
+from django.utils import timezone
+
+
+class Trip(models.Model):
+    CLIMATE_CHOICES = [
+        ('hot', 'Hot'),
+        ('cold', 'Cold'),
+        ('moderate', 'Moderate'),
+    ]
+
+
+    TRAVEL_TYPE_CHOICES = [
+        ('adventure', 'Adventure'),
+        ('relaxation', 'Relaxation'),
+        ('cultural', 'Cultural'),
+        ('family', 'Family'),
+    ]
+
+
+    destination = models.CharField(max_length=255, default='Unknown')
+    budget = models.IntegerField(default=0)
+    days = models.IntegerField(default=1)
+    climate = models.CharField(max_length=20, choices=CLIMATE_CHOICES, default='moderate', null=True, blank=True)
+    travel_type = models.CharField(max_length=20, choices=TRAVEL_TYPE_CHOICES, default='relaxation', null=True, blank=True)
+    itinerary = models.TextField(blank=True)
+
+
+    # Full structured trip plan (used to render the results page and export)
+    plan_data = models.JSONField(default=dict, blank=True)
+
+
+    # Trip image (optional)
+    image = models.ImageField(upload_to='trip_images/', blank=True, null=True)
+
+
+    # Soft delete field
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(null=True, blank=True)
+
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+    def __str__(self):
+        return f"{self.destination} - {self.budget}"
+
+
+    def delete(self, *args, **kwargs):
+        # Soft delete: mark as deleted instead of actually deleting
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.save()
+
+
+    def recycle(self):
+        # Restore a soft-deleted trip
+        self.is_deleted = False
+        self.deleted_at = None
+        self.save()
+
+
+    def hard_delete(self, *args, **kwargs):
+        # Actually delete the trip and its image file
+        if self.image:
+            default_storage.delete(self.image.name)
+        super().delete(*args, **kwargs)
+
+
+views.py
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+from .serializers import TripRequestSerializer
+from .services.ai_engine import predict_destination, generate_trip_plan
+from .models import Trip
+import json
+import os
+from urllib.parse import unquote
+
+
+from django.conf import settings
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required
+
+
+def get_destination_image_url(destination, default_query):
+    """Return a local static image if available, otherwise fallback to Unsplash."""
+    filename = f"{destination.lower().replace(' ', '_')}.jpg"
+    local_path = os.path.join(settings.BASE_DIR, "static", "images", filename)
+    if os.path.exists(local_path):
+        static_url = settings.STATIC_URL
+        if not static_url.startswith('/'):
+            static_url = '/' + static_url
+        static_url = static_url.rstrip('/') + '/'
+        return f"{static_url}images/{filename}"
+    return f"https://source.unsplash.com/600x400/?{default_query}"
+
+
+def login_page(request):
+    """Handle user login"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        user = authenticate(request, username=username, password=password)
+        if user is not None:
+            login(request, user)
+            messages.success(request, f'Welcome back, {username}!')
+            return redirect('home')
+        else:
+            messages.error(request, 'Invalid username or password.')
+    return render(request, 'login.html')
+
+
+def register_page(request):
+    """Handle user registration"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        email = request.POST.get('email')
+        password = request.POST.get('password')
+        password_confirm = request.POST.get('password_confirm')
+        
+        if password != password_confirm:
+            messages.error(request, 'Passwords do not match.')
+            return render(request, 'register.html')
+        
+        if User.objects.filter(username=username).exists():
+            messages.error(request, 'Username already exists.')
+            return render(request, 'register.html')
+        
+        if User.objects.filter(email=email).exists():
+            messages.error(request, 'Email already exists.')
+            return render(request, 'register.html')
+        
+        user = User.objects.create_user(username=username, email=email, password=password)
+        login(request, user)
+        messages.success(request, f'Welcome, {username}! Your account has been created.')
+        return redirect('home')
+    
+    return render(request, 'register.html')
+
+
+def logout_page(request):
+    """Handle user logout"""
+    logout(request)
+    messages.success(request, 'You have been logged out successfully.')
+    return redirect('login')
+
+
+def home_page(request):
+    """Show landing page for anonymous users, home page for authenticated users"""
+    if not request.user.is_authenticated:
+        return render(request, "landing.html")
+    return render(request, "home.html")
+
+
+@login_required(login_url='login')
+def destinations_page(request):
+    """Display all available destinations from trained model"""
+    destinations_data = [
+        {'name': 'Tirupati', 'image_file': 'tirupati.jpg', 'state': 'Andhra Pradesh', 'climate': 'hot', 'best_time': 'Sep - Mar', 'description': 'Ancient temple with spiritual significance'},
+        {'name': 'Tawang', 'image_file': 'tawang.jpg', 'state': 'Arunachal Pradesh', 'climate': 'cold', 'best_time': 'Apr - Jun', 'description': 'Scenic monastery and mountain beauty'},
+        {'name': 'Kaziranga', 'image_file': 'kaziranga.jpg', 'state': 'Assam', 'climate': 'hot', 'best_time': 'Nov - Apr', 'description': 'Wildlife sanctuary with one-horned rhinos'},
+        {'name': 'Bodh Gaya', 'image_file': 'bodh_gaya.jpg', 'state': 'Bihar', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Pilgrimage destination and meditation site'},
+        {'name': 'Chitrakote', 'image_file': 'chitrakote.jpg', 'state': 'Chhattisgarh', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Stunning waterfall and natural beauty'},
+        {'name': 'Baga Beach', 'image_file': 'baga_beach.jpg', 'state': 'Goa', 'climate': 'hot', 'best_time': 'Nov - Feb', 'description': 'Vibrant beach with nightlife and water sports'},
+        {'name': 'Gir Wildlife Sanctuary', 'image_file': 'gir_wildlife_sanctuary.jpg', 'state': 'Gujarat', 'climate': 'hot', 'best_time': 'Dec - Apr', 'description': 'Home to Asiatic lions and wildlife'},
+        {'name': 'Kurukshetra', 'image_file': 'kurukshetra.jpg', 'state': 'Haryana', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Historic pilgrimage and cultural site'},
+        {'name': 'Shimla', 'image_file': 'shimla.jpg', 'state': 'Himachal Pradesh', 'climate': 'cold', 'best_time': 'Mar - Jun', 'description': 'Hill station with colonial charm'},
+        {'name': 'Ranchi', 'image_file': 'ranchi.jpg', 'state': 'Jharkhand', 'climate': 'moderate', 'best_time': 'Oct - Mar', 'description': 'Waterfalls and natural parks'},
+        {'name': 'Hampi', 'image_file': 'hampi.jpg', 'state': 'Karnataka', 'climate': 'moderate', 'best_time': 'Oct - Feb', 'description': 'UNESCO heritage ruins and architecture'},
+        {'name': 'Alleppey Backwaters', 'image_file': 'alleppey_backwaters.jpg', 'state': 'Kerala', 'climate': 'hot', 'best_time': 'Sep - Mar', 'description': 'Houseboat cruises and backwater beauty'},
+        {'name': 'Khajuraho', 'image_file': 'khajuraho.jpg', 'state': 'Madhya Pradesh', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Ancient temples with intricate carvings'},
+        {'name': 'Ajanta Caves', 'image_file': 'ajanta_caves.jpg', 'state': 'Maharashtra', 'climate': 'hot', 'best_time': 'Nov - Mar', 'description': 'Ancient Buddhist cave complex'},
+        {'name': 'Loktak Lake', 'image_file': 'loktak_lake.jpg', 'state': 'Manipur', 'climate': 'moderate', 'best_time': 'Oct - Mar', 'description': 'Unique floating lake with natural beauty'},
+        {'name': 'Cherrapunji', 'image_file': 'cherrapunji.jpg', 'state': 'Meghalaya', 'climate': 'moderate', 'best_time': 'Oct - May', 'description': 'Waterfalls and green landscapes'},
+        {'name': 'Aizawl', 'image_file': 'aizawl.jpg', 'state': 'Mizoram', 'climate': 'moderate', 'best_time': 'Oct - May', 'description': 'Hill city with cultural richness'},
+        {'name': 'Kohima', 'image_file': 'kohima.jpg', 'state': 'Nagaland', 'climate': 'moderate', 'best_time': 'Oct - Apr', 'description': 'Cultural hub and festival destination'},
+        {'name': 'Puri', 'image_file': 'puri.jpg', 'state': 'Odisha', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Sacred temple and beach town'},
+        {'name': 'Golden Temple', 'image_file': 'golden_temple.jpg', 'state': 'Punjab', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Holy pilgrimage site and spiritual center'},
+        {'name': 'Jaipur', 'image_file': 'jaipur.jpg', 'state': 'Rajasthan', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'City palace and historic forts'},
+        {'name': 'Gangtok', 'image_file': 'gangtok.jpg', 'state': 'Sikkim', 'climate': 'moderate', 'best_time': 'Mar - Jun', 'description': 'Mountain city with Buddhist monasteries'},
+        {'name': 'Mahabalipuram', 'image_file': 'mahabalipuram.jpg', 'state': 'Tamil Nadu', 'climate': 'hot', 'best_time': 'Nov - Feb', 'description': 'Heritage temples and beach town'},
+        {'name': 'Hyderabad', 'image_file': 'hyderabad.jpg', 'state': 'Telangana', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Historic monuments and tech city'},
+        {'name': 'Ujjayanta Palace', 'image_file': 'ujjayanta_palace.jpg', 'state': 'Tripura', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Historic palace and museum'},
+        {'name': 'Agra', 'image_file': 'agra.jpg', 'state': 'Uttar Pradesh', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Taj Mahal and iconic monument'},
+        {'name': 'Rishikesh', 'image_file': 'rishikesh.jpg', 'state': 'Uttarakhand', 'climate': 'moderate', 'best_time': 'Sep - Nov', 'description': 'Yoga capital and adventure hub'},
+        {'name': 'Darjeeling', 'image_file': 'darjeeling.jpg', 'state': 'West Bengal', 'climate': 'cold', 'best_time': 'Mar - Jun', 'description': 'Tea gardens and mountain railway'},
+        {'name': 'Port Blair', 'image_file': 'port_blair.jpg', 'state': 'Andaman and Nicobar Islands', 'climate': 'hot', 'best_time': 'Oct - May', 'description': 'Island paradise and beaches'},
+        {'name': 'Rock Garden', 'image_file': 'rock_garden.jpg', 'state': 'Chandigarh', 'climate': 'moderate', 'best_time': 'Sep - Mar', 'description': 'Artistic rock garden creation'},
+        {'name': 'Daman Beach', 'image_file': 'daman_beach.jpg', 'state': 'Dadra and Nagar Haveli and Daman and Diu', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Beach resort and watersports'},
+        {'name': 'Srinagar', 'image_file': 'srinagar.jpg', 'state': 'Jammu and Kashmir', 'climate': 'cold', 'best_time': 'Apr - Oct', 'description': 'Houseboats and scenic lakes'},
+        {'name': 'Pangong Lake', 'image_file': 'pangong_lake.jpg', 'state': 'Ladakh', 'climate': 'cold', 'best_time': 'Jun - Sep', 'description': 'High altitude lake and trekking'},
+        {'name': 'Minicoy Island', 'image_file': 'minicoy_island.jpg', 'state': 'Lakshadweep', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Tropical island paradise'},
+        {'name': 'Pondicherry', 'image_file': 'pondicherry.jpg', 'state': 'Puducherry', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'French colonial charm and beaches'},
+        {'name': 'India Gate', 'image_file': 'india_gate.jpg', 'state': 'Delhi', 'climate': 'hot', 'best_time': 'Oct - Mar', 'description': 'Iconic monument and city landmark'},
+    ]
+    # Add a cache-busting version (file mtime) for each image so browser picks up updates
+    for d in destinations_data:
+        filename = d.get('image_file')
+        if filename:
+            local_path = os.path.join(settings.BASE_DIR, 'static', 'images', filename)
+            try:
+                d['image_version'] = str(int(os.path.getmtime(local_path)))
+            except Exception:
+                d['image_version'] = '0'
+        else:
+            d['image_version'] = '0'
+
+
+    return render(request, "destinations.html", {'destinations': destinations_data})
+
+
+@login_required(login_url='login')
+def plan_trip_page(request):
+    """Display trip planning form"""
+    return render(request, "plan_trip.html")
+
+
+@login_required(login_url='login')
+def my_trips_page(request):
+    """Display a list of saved trips"""
+    trips = Trip.objects.filter(is_deleted=False).order_by('-created_at')
+    deleted_trips = Trip.objects.filter(is_deleted=True).order_by('-deleted_at')
+    return render(request, "my_trips.html", {"trips": trips, "deleted_trips": deleted_trips})
+
+
+@login_required(login_url='login')
+def delete_trip(request, trip_id):
+    """Soft delete a trip"""
+    if request.method == 'POST':
+        try:
+            trip = get_object_or_404(Trip, pk=trip_id, is_deleted=False)
+            trip.delete()  # This will now do soft delete
+            messages.success(request, f'Trip to {trip.destination} has been moved to trash.')
+        except Trip.DoesNotExist:
+            messages.error(request, 'Trip not found.')
+    return redirect('my-trips')
+
+
+@login_required(login_url='login')
+def recycle_trip(request, trip_id):
+    """Restore a soft-deleted trip"""
+    if request.method == 'POST':
+        try:
+            trip = get_object_or_404(Trip, pk=trip_id, is_deleted=True)
+            trip.recycle()
+            messages.success(request, f'Trip to {trip.destination} has been restored.')
+        except Trip.DoesNotExist:
+            messages.error(request, 'Trip not found.')
+    return redirect('my-trips')
+
+
+@login_required(login_url='login')
+def trip_detail_page(request, trip_id):
+    """Display a saved trip's details"""
+    trip = get_object_or_404(Trip, pk=trip_id)
+    trip_plan = trip.plan_data or {}
+    # If we have older trips in the DB without full plan_data, backfill key pieces
+    if not trip_plan.get('destination'):
+        trip_plan['destination'] = trip.destination
+    if not trip_plan.get('budget'):
+        trip_plan['budget'] = trip.budget
+    if not trip_plan.get('days'):
+        trip_plan['days'] = trip.days
+    if not trip_plan.get('climate'):
+        trip_plan['climate'] = trip.climate
+    if not trip_plan.get('travel_type'):
+        trip_plan['travel_type'] = trip.travel_type
+
+
+    if not trip_plan.get('itinerary'):
+        try:
+            # Try to parse as JSON array first
+            parsed_itinerary = json.loads(trip.itinerary)
+            if isinstance(parsed_itinerary, list):
+                trip_plan['itinerary'] = parsed_itinerary
+            else:
+                # If it's a string, convert to single-item list
+                trip_plan['itinerary'] = [trip.itinerary]
+        except (json.JSONDecodeError, TypeError):
+            # If JSON parsing fails, treat as plain string and convert to list
+            trip_plan['itinerary'] = [trip.itinerary] if trip.itinerary else []
+
+
+    # Add image URL if exists
+    if trip.image:
+        trip_plan['image_url'] = trip.image.url
+
+
+    trip_plan["trip_id"] = trip.id
+
+
+    # Keep the plan in session to support the results template
+    request.session["trip_plan"] = trip_plan
+    return render(request, "trip_results.html", {"trip_plan": trip_plan})
+
+
+@login_required(login_url='login')
+def trip_results_page(request):
+    """Display trip results"""
+
+
+    # Allow viewing a saved trip by id
+    trip_id = request.GET.get('trip_id')
+    if trip_id:
+        try:
+            trip = Trip.objects.get(pk=int(trip_id))
+            trip_data = trip.plan_data or {}
+            # Backfill missing fields for trips created before plan_data was added
+            if not trip_data.get('destination'):
+                trip_data['destination'] = trip.destination
+            if not trip_data.get('budget'):
+                trip_data['budget'] = trip.budget
+            if not trip_data.get('days'):
+                trip_data['days'] = trip.days
+            if not trip_data.get('climate'):
+                trip_data['climate'] = trip.climate
+            if not trip_data.get('travel_type'):
+                trip_data['travel_type'] = trip.travel_type
+
+
+            if not trip_data.get('itinerary'):
+                try:
+                    # Try to parse as JSON array first
+                    parsed_itinerary = json.loads(trip.itinerary)
+                    if isinstance(parsed_itinerary, list):
+                        trip_data['itinerary'] = parsed_itinerary
+                    else:
+                        # If it's a string, convert to single-item list
+                        trip_data['itinerary'] = [trip.itinerary]
+                except (json.JSONDecodeError, TypeError):
+                    # If JSON parsing fails, treat as plain string and convert to list
+                    trip_data['itinerary'] = [trip.itinerary] if trip.itinerary else []
+
+
+            # Add image URL if exists
+            if trip.image:
+                trip_data['image_url'] = trip.image.url
+
+
+            trip_data["trip_id"] = trip.id
+            request.session["trip_plan"] = trip_data
+        except (Trip.DoesNotExist, ValueError):
+            pass
+
+
+    # Check if trip data is passed via URL parameter
+    trip_data_param = request.GET.get('data')
+    if trip_data_param:
+        try:
+            trip_data = json.loads(unquote(trip_data_param))
+            request.session["trip_plan"] = trip_data
+        except (json.JSONDecodeError, TypeError):
+            pass
+
+
+    # Get trip data from session
+    trip_data = request.session.get("trip_plan")
+    if not trip_data:
+        # If no trip data, redirect to plan trip page
+        return redirect('plan-trip')
+
+
+    return render(request, "trip_results.html", {'trip_plan': trip_data})
+
+
+class TripRecommendationView(APIView):
+    @method_decorator(csrf_exempt)
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
+
+    def post(self, request):
+        serializer = TripRequestSerializer(data=request.data)
+
+
+        if serializer.is_valid():
+            data = serializer.validated_data
+
+
+            # If destination is provided, use it; otherwise predict one
+            if 'destination' in request.data and request.data['destination']:
+                destination = request.data['destination']
+            else:
+                destination = predict_destination(
+                    budget=data["budget"],
+                    days=data["days"],
+                    climate=data["climate"],
+                    travel_type=data["travel_type"]
+                )
+
+
+            # Parse interests if it's a JSON string
+            interests = request.data.get('interests', [])
+            if isinstance(interests, str):
+                try:
+                    interests = json.loads(interests)
+                except json.JSONDecodeError:
+                    interests = []
+
+
+            # Convert travelers to int
+            try:
+                travelers = int(request.data.get('travelers', 1))
+            except (ValueError, TypeError):
+                travelers = 1
+
+
+            try:
+                # Generate comprehensive trip plan
+                trip_plan = generate_trip_plan(
+                    destination=destination,
+                    days=data["days"],
+                    budget=data["budget"],
+                    climate=data["climate"],
+                    travel_type=data["travel_type"],
+                    travelers=travelers,
+                    accommodation=request.data.get('accommodation', 'standard'),
+                    interests=interests,
+                    special_requests=request.data.get('special_requests', '')
+                )
+
+
+                # Save to database (including full plan data for later review)
+                trip = Trip.objects.create(
+                    destination=trip_plan['destination'],
+                    budget=trip_plan['budget'],
+                    days=trip_plan['days'],
+                    climate=trip_plan['climate'],
+                    travel_type=trip_plan['travel_type'],
+                    itinerary=json.dumps(trip_plan.get('itinerary', [])),
+                    plan_data=trip_plan,
+                    image=data.get('image'),  # Save uploaded image if provided
+                )
+
+
+                # Return full trip plan data
+                return Response({
+                    **trip_plan,
+                    "trip_id": trip.id,
+                }, status=status.HTTP_200_OK)
+            except Exception as e:
+                return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+Manage.py
+Manage.py
+#!/usr/bin/env python
+"""Django's command-line utility for administrative tasks."""
+import os
+import sys
+
+
+def main():
+    """Run administrative tasks."""
+    os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+    try:
+        from django.core.management import execute_from_command_line
+    except ImportError as exc:
+        raise ImportError(
+            "Couldn't import Django. Are you sure it's installed and "
+            "available on your PYTHONPATH environment variable? Did you "
+            "forget to activate a virtual environment?"
+        ) from exc
+    execute_from_command_line(sys.argv)
+
+
+if __name__ == '__main__':
+    main()
+
+
+
+base.html
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI Trip Planner</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+
+    <!-- Bootstrap 5 CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    
+    <!-- CSRF Token for AJAX requests -->
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<body>
+    <!-- Hidden form for CSRF token -->
+    <form id="csrf-form" style="display: none;">
+        {% csrf_token %}
+    </form>
+
+
+<!-- 🔷 Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow">
+    <div class="container">
+        <a class="navbar-brand fw-bold" href="{% url 'home' %}">✈️ AI Trip Planner</a>
+
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'home' %}">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'destinations' %}">Destinations</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'plan-trip' %}">Plan Trip</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'my-trips' %}">My Trips</a>
+                    </li>
+                    
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            👤 {{ user.username }}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                            <li><a class="dropdown-item" href="{% url 'my-trips' %}">My Trips</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
+                        </ul>
+                    </li>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Login</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="btn btn-primary ms-2" href="{% url 'register' %}">Sign Up</a>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+
+<!-- Messages -->
+{% if messages %}
+<div class="container mt-3">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+{% block content %}{% endblock %}
+
+
+<!-- 🔷 Footer -->
+<footer class="bg-dark text-white text-center p-4 mt-5">
+    <p class="mb-0">© 2026 AI Trip Planner</p>
+</footer>
+
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+
+
+Destinations.html
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+
+<!-- 🌍 Destinations Header -->
+<div class="bg-light py-5">
+    <div class="container">
+        <h1 class="display-5 fw-bold mb-3">Explore Destinations</h1>
+        <p class="lead text-muted">Discover amazing places across India</p>
+    </div>
+</div>
+
+
+<!-- 🔍 Filter Section -->
+<section class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <input type="text" id="searchInput" class="form-control form-control-lg" placeholder="Search destinations...">
+        </div>
+        <div class="col-md-4">
+            <select id="climateFilter" class="form-select form-select-lg">
+                <option value="">All Climates</option>
+                <option value="hot">Hot</option>
+                <option value="cold">Cold</option>
+                <option value="moderate">Moderate</option>
+            </select>
+        </div>
+        <div class="col-md-4">
+            <button class="btn btn-outline-primary w-100" onclick="resetFilters()">Reset Filters</button>
+        </div>
+    </div>
+</section>
+
+
+<!-- 🎴 Destinations Grid -->
+<section class="container pb-5">
+    <div class="row g-4" id="destinationsContainer">
+        {% for destination in destinations %}
+        <div class="col-md-6 col-lg-4 destination-card" data-name="{{ destination.name|lower }}" data-climate="{{ destination.climate }}">
+            <div class="card h-100 shadow-sm border-0 transition-card">
+                <img src="{% static 'images/' %}{{ destination.image_file }}?v={{ destination.image_version }}" class="card-img-top" alt="{{ destination.name }}" style="height: 250px; object-fit: cover;" onerror="this.onerror=null; this.src='https://via.placeholder.com/400x250?text=No+Image';">
+                <div class="card-body">
+                    <h5 class="card-title fw-bold">{{ destination.name }}</h5>
+                    <p class="card-text text-muted small">{{ destination.state }}</p>
+                    <p class="card-text text-muted">{{ destination.description }}</p>
+                    
+                    <div class="mb-3">
+                        <span class="badge bg-info">{{ destination.climate|upper }}</span>
+                        <span class="badge bg-warning text-dark">{{ destination.best_time }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top-0">
+                    <a href="{% url 'plan-trip' %}?destination={{ destination.name }}" class="btn btn-primary w-100">Plan Trip Here</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+
+    <!-- No Results Message -->
+    <div id="noResults" class="alert alert-info text-center py-5" style="display: none;">
+        <h5>No destinations found</h5>
+        <p>Try adjusting your filters</p>
+    </div>
+</section>
+
+
+<!-- 📱 Features Section -->
+<section class="bg-light py-5">
+    <div class="container">
+        <h2 class="text-center mb-5">Why Choose Our Destinations?</h2>
+        <div class="row g-4">
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-star-fill" style="font-size: 2rem; color: #007bff;"></i>
+                </div>
+                <h5>Curated Selections</h5>
+                <p>Handpicked destinations for unforgettable experiences</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-person-check" style="font-size: 2rem; color: #28a745;"></i>
+                </div>
+                <h5>Expert Recommendations</h5>
+                <p>AI-powered suggestions based on your preferences</p>
+            </div>
+            <div class="col-md-4 text-center">
+                <div class="mb-3">
+                    <i class="bi bi-calendar-check" style="font-size: 2rem; color: #ffc107;"></i>
+                </div>
+                <h5>Best Time to Visit</h5>
+                <p>Know the perfect season for each destination</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+
+<!-- 🎯 CTA Section -->
+<section class="bg-primary text-white py-5">
+    <div class="container text-center">
+        <h2 class="mb-3">Ready to Plan Your Trip?</h2>
+        <p class="lead mb-4">Let our AI help you create the perfect itinerary</p>
+        <a href="{% url 'plan-trip' %}" class="btn btn-light btn-lg">Start Planning Now</a>
+    </div>
+</section>
+
+
+<style>
+    .transition-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+
+    .transition-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+    }
+
+
+    .destination-card {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+
+<script>
+    const searchInput = document.getElementById('searchInput');
+    const climateFilter = document.getElementById('climateFilter');
+    const destinationCards = document.querySelectorAll('.destination-card');
+    const noResults = document.getElementById('noResults');
+
+
+    function filterDestinations() {
+        const searchTerm = searchInput.value.toLowerCase();
+        const selectedClimate = climateFilter.value;
+        let visibleCount = 0;
+
+
+        destinationCards.forEach(card => {
+            const name = card.getAttribute('data-name');
+            const climate = card.getAttribute('data-climate');
+            
+            const matchesSearch = name.includes(searchTerm);
+            const matchesClimate = selectedClimate === '' || climate === selectedClimate;
+
+
+            if (matchesSearch && matchesClimate) {
+                card.style.display = 'block';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+
+        noResults.style.display = visibleCount === 0 ? 'block' : 'none';
+    }
+
+
+    function resetFilters() {
+        searchInput.value = '';
+        climateFilter.value = '';
+        filterDestinations();
+    }
+
+
+    searchInput.addEventListener('keyup', filterDestinations);
+    climateFilter.addEventListener('change', filterDestinations);
+</script>
+
+
+{% endblock %}
+
+
+Home.html
+{% extends 'base.html' %}
+{% load static %}
+
+
+{% block content %}
+
+
+<!-- 🌄 Hero Section -->
+<section class="hero-section text-white text-center d-flex align-items-center">
+    <div class="container">
+        <h1 class="display-4 fw-bold">Plan Your Perfect Trip with AI</h1>
+        <p class="lead">Smart itineraries. Smart budgets. Smart travel.</p>
+        <a href="#planner" class="btn btn-primary btn-lg mt-3">Start Planning</a>
+    </div>
+</section>
+
+
+<!-- 🎞 Carousel -->
+<div class="container mt-5">
+    <h2 class="text-center mb-4">Popular Destinations</h2>
+
+
+    <div id="destinationCarousel" class="carousel slide" data-bs-ride="carousel">
+        <div class="carousel-inner rounded shadow">
+
+
+            <div class="carousel-item active">
+                <img src="{% static 'css/images/Goa.jpeg' %}" class="d-block w-100" alt="Goa">
+                <div class="carousel-caption">
+                    <h3>Goa</h3>
+                </div>
+            </div>
+
+
+            <div class="carousel-item">
+                <img src="{% static 'css/images/Manali.jpeg' %}" class="d-block w-100" alt="Manali">
+                <div class="carousel-caption">
+                    <h3>Manali</h3>
+                </div>
+            </div>
+
+
+            <div class="carousel-item">
+                <img src="{% static 'css/images/Jaipur.jpg' %}" class="d-block w-100" alt="Jaipur">
+                <div class="carousel-caption">
+                    <h3>Jaipur</h3>
+                </div>
+            </div>
+
+
+        </div>
+
+
+        <button class="carousel-control-prev" type="button" data-bs-target="#destinationCarousel" data-bs-slide="prev">
+            <span class="carousel-control-prev-icon"></span>
+        </button>
+
+
+        <button class="carousel-control-next" type="button" data-bs-target="#destinationCarousel" data-bs-slide="next">
+            <span class="carousel-control-next-icon"></span>
+        </button>
+    </div>
+</div>
+
+
+<!-- 📝 Planner Form -->
+<section id="planner" class="container mt-5">
+    <div class="card shadow-lg p-4">
+        <h3 class="mb-4 text-center">Generate Your Trip</h3>
+
+
+        <form id="tripForm">
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Number of Days</label>
+                    <input type="number" class="form-control" id="days" name="days" min="1" max="30" required>
+                </div>
+
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Budget (₹)</label>
+                    <input type="number" class="form-control" id="budget" name="budget" min="1000" required>
+                </div>
+            </div>
+
+
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Climate Preference</label>
+                    <select class="form-select" id="climate" name="climate" required>
+                        <option value="">Select Climate</option>
+                        <option value="hot">Hot</option>
+                        <option value="cold">Cold</option>
+                        <option value="moderate">Moderate</option>
+                    </select>
+                </div>
+
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label">Travel Type</label>
+                    <select class="form-select" id="travel_type" name="travel_type" required>
+                        <option value="">Select Travel Type</option>
+                        <option value="adventure">Adventure</option>
+                        <option value="relaxation">Relaxation</option>
+                    </select>
+                </div>
+            </div>
+
+
+            <button type="submit" class="btn btn-primary w-100">Generate Recommendation</button>
+        </form>
+
+
+        <div id="result" class="mt-4" style="display:none;">
+            <div class="alert alert-success">
+                <h5>✈️ Recommended Destination</h5>
+                <h2 id="destination" class="text-primary"></h2>
+                <p><strong>Budget:</strong> ₹<span id="resultBudget"></span></p>
+                <p><strong>Days:</strong> <span id="resultDays"></span></p>
+                <p><strong>Climate:</strong> <span id="resultClimate"></span></p>
+                <p><strong>Travel Type:</strong> <span id="resultTravelType"></span></p>
+            </div>
+        </div>
+
+
+        <script>
+            document.getElementById('tripForm').addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    days: parseInt(document.getElementById('days').value),
+                    budget: parseFloat(document.getElementById('budget').value),
+                    climate: document.getElementById('climate').value,
+                    travel_type: document.getElementById('travel_type').value
+                };
+
+
+                try {
+                    const endpoint = '{% url "recommend-trip" %}';
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify(formData)
+                    });
+
+
+                    const result = await response.json();
+
+
+                    if (response.ok) {
+                        const tripData = encodeURIComponent(JSON.stringify(result));
+                        window.location.href = `{% url "trip-results" %}?data=${tripData}`;
+                    } else {
+                        alert('Error: ' + JSON.stringify(result));
+                    }
+                } catch (error) {
+                    alert('Error: ' + error.message);
+                }
+            });
+
+
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+        </script>
+    </div>
+</section>
+
+
+{% endblock %}
+
+
+Mytrips.html
+{% extends 'base.html' %}
+{% load humanize %}
+
+
+{% block content %}
+<div class="container py-5">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h1 class="h3">My Saved Trips</h1>
+      <p class="text-muted mb-0">Review and revisit past trip plans.</p>
+    </div>
+    <a href="{% url 'plan-trip' %}" class="btn btn-primary">Plan a New Trip</a>
+  </div>
+
+
+  {% if trips %}
+  <div class="table-responsive">
+    <table class="table table-hover align-middle">
+      <thead class="table-light">
+        <tr>
+          <th>Photo</th>
+          <th>Destination</th>
+          <th>Created</th>
+          <th>Budget</th>
+          <th>Days</th>
+          <th>Type</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for trip in trips %}
+        <tr>
+          <td>
+            {% if trip.image %}
+              <img src="{{ trip.image.url }}" alt="Trip Photo" class="rounded" style="width: 60px; height: 40px; object-fit: cover;">
+            {% else %}
+              <div class="bg-light rounded d-flex align-items-center justify-content-center" style="width: 60px; height: 40px;">
+                <span class="text-muted small">📷</span>
+              </div>
+            {% endif %}
+          </td>
+          <td>{{ trip.destination }}</td>
+          <td>{{ trip.created_at|date:"M d, Y H:i" }}</td>
+          <td>₹{{ trip.budget|intcomma }}</td>
+          <td>{{ trip.days }}</td>
+          <td>{{ trip.travel_type|title }}</td>
+          <td class="text-end">
+            <a href="{% url 'trip-detail' trip.id %}" class="btn btn-sm btn-outline-primary me-1">View</a>
+            <form method="post" action="{% url 'delete-trip' trip.id %}" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this trip?')">
+              {% csrf_token %}
+              <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card border-0 shadow-sm">
+    <div class="card-body text-center">
+      <h5 class="card-title">No saved trips yet</h5>
+      <p class="card-text text-muted">Plan a trip to see it listed here.</p>
+      <a href="{% url 'plan-trip' %}" class="btn btn-primary">Start Planning</a>
+    </div>
+  </div>
+  {% endif %}
+
+
+  {% if deleted_trips %}
+  <div class="mt-5">
+    <h4 class="h5 text-muted mb-3">🗑️ Recently Deleted Trips</h4>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle opacity-75">
+        <thead class="table-light">
+          <tr>
+            <th>Photo</th>
+            <th>Destination</th>
+            <th>Deleted</th>
+            <th>Budget</th>
+            <th>Days</th>
+            <th>Type</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for trip in deleted_trips %}
+          <tr>
+            <td>
+              {% if trip.image %}
+                <img src="{{ trip.image.url }}" alt="Trip Photo" class="rounded opacity-50" style="width: 60px; height: 40px; object-fit: cover;">
+              {% else %}
+                <div class="bg-light rounded d-flex align-items-center justify-content-center opacity-50" style="width: 60px; height: 40px;">
+                  <span class="text-muted small">📷</span>
+                </div>
+              {% endif %}
+            </td>
+            <td class="text-muted">{{ trip.destination }}</td>
+            <td class="text-muted">{{ trip.deleted_at|date:"M d, Y H:i" }}</td>
+            <td class="text-muted">₹{{ trip.budget|intcomma }}</td>
+            <td class="text-muted">{{ trip.days }}</td>
+            <td class="text-muted">{{ trip.travel_type|title }}</td>
+            <td class="text-end">
+              <form method="post" action="{% url 'recycle-trip' trip.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-sm btn-outline-success">Recycle</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+
+
+APPENDIX B: CALIBRATION AND
+SETUP GUIDE
+1. Prerequisites
+Before you start, ensure you have the following installed on your system:
+Python (version 3.8 or higher)
+PostgreSQL (running locally on port 5432)
+Git (optional, for version control)
+2. Database Setup
+This project uses PostgreSQL. You need to create a database and user matching the      configuration in config/settings.py.
+Open your terminal or command prompt.
+Log into the PostgreSQL interactive terminal:
+psql -U postgres
+Create the database:
+CREATE DATABASE ai_project_db;
+Verify that the user postgres has the password postgres. If you need to alter the password:
+ALTER USER postgres WITH PASSWORD 'postgres';
+Exit the PostgreSQL terminal:
+\q
+3. Environment Setup
+It's recommended to run the project inside an isolated virtual environment. The project is already configured with an environment directory named myenv.
+Navigate to the project root directory:
+cd /path/to/AI_Project
+Activate the virtual environment:
+On macOS/Linux:
+source myenv/bin/activate
+
+On Windows:
+myenv\Scripts\activate
+4. Install Dependencies
+A requirements.txt file is present in the project directory with all the required dependencies.
+With the virtual environment activated, install the required packages using pip:
+pip install -r requirements.txt
+5. Apply Migrations
+Set up the database schema by applying the Django migrations:
+python manage.py makemigrations
+python manage.py migrate
+
+6. Create a Superuser (Optional but Recommended)
+To access the Django admin panel, you'll need an administrative user:
+python manage.py createsuperuser
+Follow the prompts to set your username, email, and password.
+7. Run the Development Server
+Finally, start the local server:
+python manage.py runserver
+The application should now be accessible at http://127.0.0.1:8000/.
+You can log into the admin interface at http://127.0.0.1:8000/admin/ using the superuser credentials you created.
+
+Note: The system is set up to look for static files in the static and staticfiles directories. If you make any CSS or JS changes, they will be loaded dynamically in development mode.
+

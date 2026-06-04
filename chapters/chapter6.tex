@@ -13,24 +13,7 @@ Frontend technologies include:
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=6cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (req) {HTTP Request (User Action)};
-        \node[box, fill=green!15, below=of req] (django) {Django View (Server-Side Processing)};
-        \node[box, fill=orange!15, below=of django] (template) {Django Template Engine};
-        \node[box, fill=purple!15, below=of template] (html) {Rendered HTML Response};
-        \node[box, fill=red!15, below=of html] (js) {JavaScript Enhancement (Dynamic Behavior)};
-        \node[box, fill=gray!15, below=of js] (dom) {Final UI Rendered in Browser};
-
-        \draw[arrow] (req) -- (django);
-        \draw[arrow] (django) -- (template);
-        \draw[arrow] (template) -- (html);
-        \draw[arrow] (html) -- (js);
-        \draw[arrow] (js) -- (dom);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Frontend Rendering Workflow.png}
     \caption{Frontend Rendering Workflow}
     \label{fig:frontend-workflow}
 \end{figure}
@@ -66,26 +49,14 @@ The landing page acts as the entry point of the application and focuses on user 
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.2cm,
-        box/.style={draw, rounded corners, minimum width=3.5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!20] (home) {Home Page};
-        \node[box, fill=green!20, below left=1.2cm and 1.5cm of home] (login) {Login Page};
-        \node[box, fill=green!20, below right=1.2cm and 1.5cm of home] (register) {Register Page};
-        \node[box, fill=orange!20, below=2.5cm of home] (dest) {Destinations Explorer};
-        \node[box, fill=purple!20, below=of dest] (plan) {Trip Planning Form};
-        \node[box, fill=red!20, below=of plan] (results) {Results View};
-        \node[box, fill=gray!20, below=of results] (dashboard) {My Trips Dashboard};
+    \includegraphics[width=0.9\textwidth]{images/Home page.png}
+    \caption{Home Page Interface}
+    \label{fig:screenshot-home}
+\end{figure}
 
-        \draw[arrow] (home) -- (login);
-        \draw[arrow] (home) -- (register);
-        \draw[arrow] (login.south) -- ++(0,-0.4) -- ++(3.8,0) |- (dest.west);
-        \draw[arrow] (dest) -- (plan);
-        \draw[arrow] (plan) -- (results);
-        \draw[arrow] (results) -- (dashboard);
-    \end{tikzpicture}
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/User Navigation Structure.png}
     \caption{User Navigation Structure}
     \label{fig:nav-structure}
 \end{figure}
@@ -97,6 +68,20 @@ Authentication pages include:
     \item \textbf{Password validation}: Minimum length and confirmation matching
     \item \textbf{Session management}: Persistent login sessions with secure cookies
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/Login page.png}
+    \caption{Login Interface}
+    \label{fig:screenshot-login}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.85\textwidth]{images/Registration page.png}
+    \caption{Registration Interface}
+    \label{fig:screenshot-registration}
+\end{figure}
 
 \subsection{Destinations Explorer}
 
@@ -113,6 +98,13 @@ The destination explorer displays all 36 travel destinations using responsive ca
 
 The explorer supports real-time client-side filtering by destination name search and climate type selection, enabling users to find relevant destinations efficiently.
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/Destinatioj explorer.png}
+    \caption{Destinations Explorer Interface}
+    \label{fig:screenshot-explorer}
+\end{figure}
+
 \subsection{Trip Planning Form}
 
 The trip planning form acts as the primary interaction point for recommendation generation. The form securely collects:
@@ -125,6 +117,13 @@ The trip planning form acts as the primary interaction point for recommendation 
 \end{itemize}
 
 Interactive dropdowns and client-side validation improve user input accuracy and usability. Form submission is handled asynchronously via the JavaScript Fetch API, providing a seamless user experience without full page reloads.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/Trip Planning Form.png}
+    \caption{Trip Planning Form Interface}
+    \label{fig:screenshot-form}
+\end{figure}
 
 \subsection{Dashboard (My Trips)}
 
@@ -139,21 +138,7 @@ The dashboard provides personalized trip management features including:
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=5.5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (active) {Active Trips List};
-        \node[box, fill=red!15, right=2cm of active] (trash) {Deleted Trips (Trash)};
-        \node[box, fill=gray!15, below=2cm of active] (db) {Database (\texttt{is\_deleted=False})};
-        \node[box, fill=gray!15, below=2cm of trash] (dbd) {Database (\texttt{is\_deleted=True})};
-
-        \draw[arrow] (active.east) -- node[above, font=\scriptsize]{Delete} (trash.west);
-        \draw[arrow] (trash.west) -- node[below, font=\scriptsize]{Restore} (active.east);
-        \draw[arrow] (active) -- (db);
-        \draw[arrow] (trash) -- (dbd);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Soft Delete Workflow.png}
     \caption{Soft Delete Workflow}
     \label{fig:soft-delete}
 \end{figure}
@@ -171,5 +156,19 @@ The results interface displays the complete trip plan generated by the AI recomm
     \item \textbf{Activity Suggestions}: Recommended attractions and experiences
     \item \textbf{Travel Guidance}: Practical tips for the recommended destination
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/Result View 1.png}
+    \caption{Results View - Destination Recommendation and Cost Breakdown}
+    \label{fig:screenshot-result-1}
+\end{figure}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.9\textwidth]{images/Result View 2.png}
+    \caption{Results View - Day-wise Itinerary}
+    \label{fig:screenshot-result-2}
+\end{figure}
 
 The application visualizes budget distribution using percentages and organized layout structures to improve readability and user understanding. The interface is designed to create an immersive and professional travel planning experience while maintaining performance and responsiveness across all supported devices.

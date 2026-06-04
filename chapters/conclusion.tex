@@ -53,20 +53,7 @@ The current dataset covers 36 Indian travel destinations. Future work includes e
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (india) {Current: 36 Indian Destinations};
-        \node[box, fill=green!15, below=of india] (asia) {Phase 2: 200+ Asian Destinations};
-        \node[box, fill=orange!15, below=of asia] (global) {Phase 3: 1000+ Global Destinations};
-        \node[box, fill=purple!15, below=of global] (realtime) {Phase 4: Real-Time Data Integration};
-
-        \draw[arrow] (india) -- (asia);
-        \draw[arrow] (asia) -- (global);
-        \draw[arrow] (global) -- (realtime);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Future Scalable Architecture.png}
     \caption{Future Scalable Architecture}
     \label{fig:future-architecture}
 \end{figure}

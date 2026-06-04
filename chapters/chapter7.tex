@@ -4,23 +4,7 @@ Unit testing focuses on validating individual modules and functions independentl
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (write) {Write Unit Tests (\texttt{TestCase})};
-        \node[box, fill=green!15, below=of write] (run) {Run Tests (\texttt{python manage.py test})};
-        \node[box, fill=orange!15, below=of run] (check) {Check Test Output (Pass/Fail)};
-        \node[box, fill=purple!15, below=of check] (fix) {Fix Failing Tests};
-        \node[box, fill=red!15, below=of fix] (refactor) {Refactor and Re-run};
-
-        \draw[arrow] (write) -- (run);
-        \draw[arrow] (run) -- (check);
-        \draw[arrow] (check) -- (fix);
-        \draw[arrow] (fix) -- (refactor);
-        \draw[arrow, dashed] (refactor.west) -- ++(-0.6,0) |- (run.west);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Unit Testing Workflow.png}
     \caption{Unit Testing Workflow}
     \label{fig:unit-testing}
 \end{figure}
@@ -109,24 +93,7 @@ Integration testing validates the interaction between system components to ensur
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (client) {Test Client (Django TestClient)};
-        \node[box, fill=green!15, below=of client] (api) {API Endpoint Request};
-        \node[box, fill=orange!15, below=of api] (view) {View + Serializer Processing};
-        \node[box, fill=purple!15, below=of view] (ml) {ML Prediction};
-        \node[box, fill=red!15, below=of ml] (db) {Database Operation};
-        \node[box, fill=gray!15, below=of db] (resp) {Response Assertion};
-
-        \draw[arrow] (client) -- (api);
-        \draw[arrow] (api) -- (view);
-        \draw[arrow] (view) -- (ml);
-        \draw[arrow] (ml) -- (db);
-        \draw[arrow] (db) -- (resp);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Integration Testing Architecture.png}
     \caption{Integration Testing Architecture}
     \label{fig:integration-testing}
 \end{figure}
@@ -161,7 +128,7 @@ Authentication integration tests verify:
 \begin{itemize}
     \item Unauthenticated users are redirected to the login page for protected routes
     \item Valid credentials create an active session
-    \item Invalid credentials return appropriate error messages
+    \item Invalid credentials return appropriate error messages 
     \item Logout correctly clears the session
     \item CSRF token validation prevents unauthorized form submissions
 \end{itemize}
@@ -174,22 +141,7 @@ The Decision Tree classifier is evaluated on a held-out test subset (20\% of the
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (data) {Synthetic Dataset (5000 records)};
-        \node[box, fill=green!15, below=of data] (split) {Train/Test Split (80\%/20\%)};
-        \node[box, fill=orange!15, below=of split] (train) {Decision Tree Training (max\_depth=8)};
-        \node[box, fill=purple!15, below=of train] (predict) {Prediction on Test Set};
-        \node[box, fill=red!15, below=of predict] (eval) {Accuracy Evaluation};
-
-        \draw[arrow] (data) -- (split);
-        \draw[arrow] (split) -- (train);
-        \draw[arrow] (train) -- (predict);
-        \draw[arrow] (predict) -- (eval);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Model Training and Evaluation Pipeline.png}
     \caption{Model Training and Evaluation Pipeline}
     \label{fig:eval-pipeline}
 \end{figure}
@@ -207,24 +159,7 @@ The model achieves high classification accuracy due to:
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.0cm,
-        box/.style={draw, rounded corners, minimum width=6.5cm, minimum height=0.85cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[box, fill=blue!15] (input) {Input Feature Vector (4 features)};
-        \node[box, fill=green!15, below=of input] (load) {Load Serialized Model (Joblib)};
-        \node[box, fill=orange!15, below=of load] (encode) {Encode Input Features};
-        \node[box, fill=purple!15, below=of encode] (pred) {Decision Tree Traversal};
-        \node[box, fill=red!15, below=of pred] (decode) {Decode Prediction to Destination Name};
-        \node[box, fill=gray!15, below=of decode] (out) {Return Prediction ($<$5ms)};
-
-        \draw[arrow] (input) -- (load);
-        \draw[arrow] (load) -- (encode);
-        \draw[arrow] (encode) -- (pred);
-        \draw[arrow] (pred) -- (decode);
-        \draw[arrow] (decode) -- (out);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Prediction Runtime Workflow.png}
     \caption{Prediction Runtime Workflow}
     \label{fig:prediction-runtime}
 \end{figure}

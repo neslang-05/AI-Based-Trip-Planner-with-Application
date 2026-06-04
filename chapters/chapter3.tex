@@ -4,29 +4,7 @@ The AI-Based Trip Planner Web Application is designed using a modular, layered a
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=1.1cm,
-        box/.style={draw, rounded corners, minimum width=8cm, minimum height=0.9cm,
-                    align=center, font=\small},
-        arrow/.style={-Stealth, thick},
-        retarrow/.style={-Stealth, thick, dashed}
-    ]
-        \node[box, fill=blue!20]   (user)     {User (Web Browser)};
-        \node[box, fill=green!20,  below=of user]     (frontend) {Frontend Layer (HTML5, CSS3, JavaScript)};
-        \node[box, fill=orange!20, below=of frontend] (django)   {Django Web Application (Views, URLs, Templates)};
-        \node[box, fill=purple!20, below=of django]   (api)      {Django REST Framework (API Layer)};
-        \node[box, fill=red!20,    below=of api]      (ml)       {Machine Learning Engine (Decision Tree, Joblib)};
-        \node[box, fill=gray!25,   below=of ml]       (db)       {Database (SQLite3 / ORM)};
-
-        \draw[arrow] (user)     -- (frontend);
-        \draw[arrow] (frontend) -- (django);
-        \draw[arrow] (django)   -- (api);
-        \draw[arrow] (api)      -- (ml);
-        \draw[arrow] (ml)       -- (db);
-        % Response path along left side
-        \draw[retarrow] (db.west) -- ++(-1.2,0) coordinate (bl)
-                        |- node[left, font=\scriptsize, xshift=-2pt]{Response} (user.west);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/High-Level System Architecture.png}
     \caption{High-Level System Architecture}
     \label{fig:system-architecture}
 \end{figure}
@@ -47,28 +25,7 @@ The system follows a structured user interaction sequence from input submission 
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        node distance=0.9cm,
-        stepbox/.style={draw, rounded corners, minimum width=7cm, minimum height=0.8cm, align=center, font=\small},
-        arrow/.style={-Stealth, thick}
-    ]
-        \node[stepbox, fill=blue!10] (s1) {1. User visits the application and registers/logs in};
-        \node[stepbox, fill=blue!10, below=of s1] (s2) {2. User fills the Trip Planning Form (budget, days, climate, travel type)};
-        \node[stepbox, fill=green!10, below=of s2] (s3) {3. Form data submitted via POST request to Django API};
-        \node[stepbox, fill=green!10, below=of s3] (s4) {4. API serializer validates input data};
-        \node[stepbox, fill=orange!10, below=of s4] (s5) {5. ML engine predicts destination using Decision Tree};
-        \node[stepbox, fill=orange!10, below=of s5] (s6) {6. Itinerary generator creates day-wise schedule and cost breakdown};
-        \node[stepbox, fill=purple!10, below=of s6] (s7) {7. Results saved to database and returned as JSON response};
-        \node[stepbox, fill=purple!10, below=of s7] (s8) {8. Frontend renders Results View with full trip plan};
-
-        \draw[arrow] (s1) -- (s2);
-        \draw[arrow] (s2) -- (s3);
-        \draw[arrow] (s3) -- (s4);
-        \draw[arrow] (s4) -- (s5);
-        \draw[arrow] (s5) -- (s6);
-        \draw[arrow] (s6) -- (s7);
-        \draw[arrow] (s7) -- (s8);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/User Interaction Sequence Diagram.png}
     \caption{User Interaction Sequence Diagram}
     \label{fig:user-interaction}
 \end{figure}
@@ -81,47 +38,7 @@ The database design consists of two primary entities: \texttt{USER} and \texttt{
 
 \begin{figure}[H]
     \centering
-    \begin{tikzpicture}[
-        entity/.style={
-            draw, rectangle, rounded corners=2pt,
-            minimum width=4.2cm, text width=3.8cm,
-            align=left, font=\small
-        },
-        header/.style={font=\small\bfseries, align=center},
-        rline/.style={draw, thick, -{Stealth}},
-        pk/.style={font=\small\bfseries\underline}
-    ]
-        % ---- USER entity box ----
-        \node[entity, fill=blue!12] (user) at (0,0) {
-            \textbf{\centerline{USER}}\\[2pt]
-            \rule{\linewidth}{0.4pt}\\[1pt]
-            \underline{id} \hfill PK\\[1pt]
-            username\\[1pt]
-            email\\[1pt]
-            password
-        };
-
-        % ---- TRIP entity box ----
-        \node[entity, fill=green!12] (trip) at (7,0) {
-            \textbf{\centerline{TRIP}}\\[2pt]
-            \rule{\linewidth}{0.4pt}\\[1pt]
-            \underline{id} \hfill PK\\[1pt]
-            destination\\[1pt]
-            budget\\[1pt]
-            days\\[1pt]
-            climate\\[1pt]
-            travel\_type\\[1pt]
-            itinerary\\[1pt]
-            is\_deleted\\[1pt]
-            created\_at
-        };
-
-        % ---- Relationship line ----
-        \draw[thick] (user.east) --
-            node[above, font=\small\bfseries]{1} node[midway, above=6pt, font=\small]{plans}
-            node[below, font=\small\bfseries, pos=1]{N}
-            (trip.west);
-    \end{tikzpicture}
+    \includegraphics[width=0.9\textwidth]{images/Entity Relationship Diagram (ERD).png}
     \caption{Entity Relationship Diagram (ERD)}
     \label{fig:erd}
 \end{figure}
