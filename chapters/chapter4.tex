@@ -89,25 +89,36 @@ The system utilizes the \textbf{DecisionTreeClassifier} algorithm from Scikit-le
 \begin{figure}[H]
     \centering
     \begin{tikzpicture}[
-        node distance=1.2cm,
-        decision/.style={draw, diamond, aspect=2.5, minimum width=4cm, align=center, font=\small},
-        leaf/.style={draw, rounded corners, minimum width=3cm, minimum height=0.7cm, align=center, font=\small, fill=green!15},
+        decision/.style={draw, diamond, aspect=2.5, minimum width=4cm,
+                         align=center, font=\small, inner sep=2pt},
+        leaf/.style={draw, rounded corners, minimum width=2.8cm,
+                     minimum height=0.7cm, align=center, font=\small, fill=green!15},
         arrow/.style={-Stealth, thick}
     ]
-        \node[decision, fill=blue!15] (root) {Budget $\leq$ threshold?};
-        \node[decision, fill=blue!15, below left=1.2cm and 2cm of root] (left) {Climate = Cold?};
-        \node[decision, fill=blue!15, below right=1.2cm and 2cm of root] (right) {Travel Type?};
-        \node[leaf, below left=1.2cm and 0.5cm of left] (ll) {Shimla};
-        \node[leaf, below right=1.2cm and 0.5cm of left] (lr) {Rishikesh};
-        \node[leaf, below left=1.2cm and 0.5cm of right] (rl) {Goa};
-        \node[leaf, below right=1.2cm and 0.5cm of right] (rr) {Manali};
+        % Root node
+        \node[decision, fill=blue!15] (root) at (0, 0) {Budget $\leq$ threshold?};
 
-        \draw[arrow] (root.west) -- node[above left, font=\scriptsize]{Yes} (left.north);
-        \draw[arrow] (root.east) -- node[above right, font=\scriptsize]{No} (right.north);
-        \draw[arrow] (left.west) -- node[above left, font=\scriptsize]{Yes} (ll.north);
-        \draw[arrow] (left.east) -- node[above right, font=\scriptsize]{No} (lr.north);
-        \draw[arrow] (right.west) -- node[above left, font=\scriptsize]{Relax} (rl.north);
-        \draw[arrow] (right.east) -- node[above right, font=\scriptsize]{Adv.} (rr.north);
+        % Level-2 nodes — wider horizontal spread to avoid overlap
+        \node[decision, fill=blue!15] (left)  at (-4.5, -2.5) {Climate = Cold?};
+        \node[decision, fill=blue!15] (right) at ( 4.5, -2.5) {Travel Type?};
+
+        % Leaf nodes — well-separated
+        \node[leaf] (ll) at (-6.5, -5) {Shimla};
+        \node[leaf] (lr) at (-2.5, -5) {Rishikesh};
+        \node[leaf] (rl) at ( 2.5, -5) {Goa};
+        \node[leaf] (rr) at ( 6.5, -5) {Manali};
+
+        % Root to branches
+        \draw[arrow] (root.south west) -- node[left,  font=\scriptsize]{Yes} (left.north);
+        \draw[arrow] (root.south east) -- node[right, font=\scriptsize]{No}  (right.north);
+
+        % Left branch to leaves
+        \draw[arrow] (left.south west) -- node[left,  font=\scriptsize]{Yes} (ll.north);
+        \draw[arrow] (left.south east) -- node[right, font=\scriptsize]{No}  (lr.north);
+
+        % Right branch to leaves
+        \draw[arrow] (right.south west) -- node[left,  font=\scriptsize]{Relax} (rl.north);
+        \draw[arrow] (right.south east) -- node[right, font=\scriptsize]{Adv.}  (rr.north);
     \end{tikzpicture}
     \caption{Decision Tree Splitting Logic Representation}
     \label{fig:decision-tree}
