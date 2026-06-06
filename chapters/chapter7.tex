@@ -2,9 +2,9 @@
 
 Unit testing focuses on validating individual modules and functions independently to ensure they behave as expected. In the AI-Based Trip Planner Web Application, unit tests are implemented to verify the correctness of critical backend logic, machine learning utilities, itinerary generation mechanisms, and data transformation functions. The testing process is primarily conducted using Python's built-in \texttt{unittest} framework and Django's testing utilities.
 
-\begin{figure}[H]
+\begin{figure}
     \centering
-    \includegraphics[width=0.9\textwidth,height=0.7\textheight,keepaspectratio]{images/Unit Testing Workflow.png}
+    \includegraphics[width=0.65\textwidth,height=0.45\textheight,keepaspectratio]{images/Unit Testing Workflow.png}
     \caption{Unit Testing Workflow}
     \label{fig:unit-testing}
 \end{figure}
@@ -105,7 +105,7 @@ API integration tests use Django's \texttt{APITestCase} to send simulated HTTP r
 \begin{itemize}
     \item HTTP 200 OK response for valid input payloads
     \item HTTP 400 Bad Request response for invalid or missing fields
-    \item Returned JSON contains required keys: \texttt{destination}, \texttt{budget}, \texttt{itinerary}
+    \item Returned JSON contains required keys: \texttt{destination}, \allowbreak \texttt{budget}, \allowbreak \texttt{itinerary}
     \item Destination in response is a valid known destination string
     \item Cost breakdown values sum correctly to the submitted budget
 \end{itemize}
@@ -141,7 +141,7 @@ The Decision Tree classifier is evaluated on a held-out test subset (20\% of the
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.9\textwidth,height=0.65\textheight,keepaspectratio]{images/Model Training and Evaluation Pipeline.png}
+    \includegraphics[width=0.65\textwidth,height=0.45\textheight,keepaspectratio]{images/Model Training and Evaluation Pipeline.png}
     \caption{Model Training and Evaluation Pipeline}
     \label{fig:eval-pipeline}
 \end{figure}
